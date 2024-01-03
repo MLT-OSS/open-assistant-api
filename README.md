@@ -90,6 +90,12 @@ Api Base URL: http://127.0.0.1:8086/api/v1
 python tests/e2e/index.py
 ```
 
+## 社区与支持
+
+加入 Open Assistant Api 微信交流群：
+
+![](docs/imgs/wx.png)
+
 ## 特别感谢
 
 我们主要参考和依赖了以下项目:
