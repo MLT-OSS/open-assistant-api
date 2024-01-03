@@ -1,0 +1,9 @@
+__pycache__/
+.idea/
+venv/
+.venv
+.env
+volumes/
+logs
+.vscode
+.DS_Store

@@ -1,0 +1,189 @@
+version: '3.8'
+
+services:
+  api:
+    image: open-assistant-api:latest
+    restart: always
+    build: .
+    volumes:
+      - ./volumes/logs/api:/app/logs
+    ports:
+      - '8086:8086'
+    environment:
+      # app
+      MODE: api
+      APP_NAME: open-assistant-api
+      APP_DEBUG: true
+      APP_ENV: prod
+
+      APP_SERVER_WORKERS: 20
+      APP_API_PREFIX: /api
+
+      LOG_LEVEL: DEBUG
+
+      # celery
+      CELERY_BROKER_URL: redis://:123456@redis:6379/1
+
+      MIGRATION_ENABLED: true
+
+      # database
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: open_assistant
+      DB_USER: open_assistant
+      DB_PASSWORD: 123456
+      DB_POOL_SIZE: 20
+
+      # redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_PASSWORD: 123456
+
+      # file service
+      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
+
+      # s3 storage
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET_NAME: oas
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_REGION: us-east-1
+
+    depends_on:
+      - db
+      - redis
+      - minio
+
+
+  worker:
+    image: open-assistant-api:latest
+    restart: always
+    build: .
+    volumes:
+      - ./volumes/logs/worker:/app/logs
+    environment:
+      # app
+      MODE: worker
+      APP_DEBUG: true
+      APP_ENV: prod
+
+      LOG_LEVEL: DEBUG
+
+      # celery
+      CELERY_BROKER_URL: redis://:123456@redis:6379/1
+      CELERY_WORKERS: 20
+
+      # database
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: open_assistant
+      DB_USER: open_assistant
+      DB_PASSWORD: 123456
+      DB_POOL_SIZE: 20
+
+      # redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      REDIS_PASSWORD: 123456
+
+      # file service
+      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
+
+      # s3 storage
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET_NAME: oas
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_REGION: us-east-1
+
+      # llm
+      OPENAI_API_BASE:
+      OPENAI_API_KEY:
+      LLM_MAX_STEP: 25
+
+      # tool
+      TOOL_WORKER_NUM: 10
+      TOOL_WORKER_EXECUTION_TIMEOUT: 180
+
+      # web search tool
+      BING_SEARCH_URL: https://api.bing.microsoft.com/v7.0/search
+      BING_SUBSCRIPTION_KEY:
+      WEB_SEARCH_NUM_RESULTS: 5
+
+    depends_on:
+      - db
+      - redis
+      - minio
+
+
+  db:
+    image: mysql:5.7.44
+    # platform: linux/x86_64
+    restart: always
+    volumes:
+      - ./volumes/mysql/data:/var/lib/mysql
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: 'open-assistant-api@2023'
+      MYSQL_USER: open_assistant
+      MYSQL_PASSWORD: '123456'
+      MYSQL_DATABASE: open_assistant
+      # TZ: Asia/Shanghai
+    command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+
+  redis:
+    image: redis:6-alpine
+    # platform: linux/x86_64
+    restart: always
+    volumes:
+      - ./volumes/redis/data:/data
+    ports:
+      - '6379:6379'
+    command: redis-server --requirepass 123456
+    healthcheck:
+      test: [ "CMD", "redis-cli","ping" ]
+
+
+  minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    # platform: linux/x86_64
+    restart: always
+    volumes:
+      - ./volumes/minio/data:/minio_data
+    ports:
+      - '9001:9001'
+      - '9000:9000'
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    command: minio server /minio_data --console-address ':9001'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+
+  create-buckets:
+    image: minio/mc
+    # platform: linux/x86_64
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      BUCKET_NAME: 'oas'
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      /usr/bin/mc mb -p minio/$${BUCKET_NAME};
+      exit 0;
+      "
