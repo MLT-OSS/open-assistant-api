@@ -6,6 +6,11 @@ _✨ 开箱即用的 AI 智能助手 API ✨_
 
 </div>
 
+<p align="center">
+  <a href="./README.md">English</a> |
+  <a href="./README_CN.md">简体中文</a>
+</p>
+
 ## 简介
 
 Open Assistant API 是一个开源自托管的 AI 智能助手 API，兼容 OpenAI 官方接口，
