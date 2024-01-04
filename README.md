@@ -67,7 +67,7 @@ Compose are installed on your machine before running.
 Go to the project root directory, open `docker-compose.yml`, fill in the openai api_key and bing search key (optional).
 
 ```sh
-# openai api_key
+# openai api_key (supports OneAPI api_key)
 OPENAI_API_KEY=<openai_api_key>
 
 # bing search key (optional)

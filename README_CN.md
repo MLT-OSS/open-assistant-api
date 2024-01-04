@@ -64,7 +64,7 @@ assistant = client.beta.assistants.create(
 进入项目根目录，打开 `docker-compose.yml`，填写 openai api_key 和 bing search key (非必填)。
 
 ```sh
-# openai api_key
+# openai api_key (支持 OneAPI api_key)
 OPENAI_API_KEY=<openai_api_key>
 
 # bing search key (非必填)
