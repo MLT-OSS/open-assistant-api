@@ -101,6 +101,7 @@ python tests/e2e/index.py
   频道，查看新发布的内容，交流问题，参与社区互动。
 - 加入 [Discord](https://discord.gg/VfBruz4B) 频道，与其他社区成员交流。
 - 加入 Open Assistant Api 微信交流群：
+ 
   ![](docs/imgs/wx.png)
 
 ## 特别感谢

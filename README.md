@@ -105,6 +105,7 @@ python tests/e2e/index.py
   channel to see new releases, discuss issues, and participate in community interactions.
 - Join the [Discord](https://discord.gg/VfBruz4B) channel to interact with other community members.
 - Join the WeChat group:
+ 
   ![](docs/imgs/wx.png)
 
 ## Special Thanks
