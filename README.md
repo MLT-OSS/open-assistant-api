@@ -1,6 +1,6 @@
 <div align="center">
 
-# Open Assistant Api
+# Open Assistant API
 
 _✨ 开箱即用的 AI 智能助手 API ✨_
 
@@ -92,9 +92,11 @@ python tests/e2e/index.py
 
 ## 社区与支持
 
-加入 Open Assistant Api 微信交流群：
-
-![](docs/imgs/wx.png)
+- 加入 [Slack](https://join.slack.com/t/openassistant-qbu7007/shared_invite/zt-29t8j9y12-9og5KZL6GagXTEvbEDf6UQ)
+  频道，查看新发布的内容，交流问题，参与社区互动。
+- 加入 [Discord](https://discord.gg/VfBruz4B) 频道，与其他社区成员交流。
+- 加入 Open Assistant Api 微信交流群：
+  ![](docs/imgs/wx.png)
 
 ## 特别感谢
 
