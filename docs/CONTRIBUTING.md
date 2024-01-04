@@ -1,30 +1,33 @@
-# 贡献
+# Contribution
 
-非常感谢您有兴趣为 Open Assistant Api 做出贡献。
+Thank you very much for your interest in contributing to Open Assistant Api.
 
-要为此项目做出贡献请遵循 "[fork and pull request](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project)" 工作流程，不要直接向仓库提交代码。
+To contribute to this project, please follow
+the "[fork and pull request](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project)"
+workflow, do not directly submit code to the repository.
 
-您可以先从解决现有 Issues 开始。
+You can start by solving existing Issues.
 
-## 代码规范
+## Code Specification
 
-本项目使用 Ruff 和 Black 做代码检查和格式化。
+This project uses Ruff and Black for code checking and formatting.
 
-建议在推送到存储库之前运行 `make lint` 检查代码格式，运行 `make format` 格式化代码。
+It is recommended to run `make lint` to check the code format before pushing to the repository, and run `make format` to
+format the code.
 
-## 技术栈
+## Technology Stack
 
-### 中间件
+### Middleware
 
 - MySQL
 - Redis
-- MinIO (或任何支持 S3 协议的 OSS)
+- MinIO (or any OSS that supports the S3 protocol)
 
-### 开发语言
+### Development Language
 
 - Python 3.10
 
-### 开发库
+### Development Libraries
 
 - [Celery](https://github.com/celery/celery)
 - [FastAPI](https://github.com/tiangolo/fastapi)
@@ -33,98 +36,98 @@
 - [LangChain](https://github.com/langchain-ai/langchain)
 - OpenAI
 
-### 工具
+### Tools
 
 - Poetry
 - Docker
 - Docker Compose
 
-## 项目结构
+## Project Structure
 
 ```
 /open-assistant-api/
 ├── app
-│   ├── api                                     ----- api控制器目录
-│   │   ├── v1                                  ----- api v1 版本
-│   │   ├── deps.py                             ----- 依赖注入项
-│   │   └── routes.py                           ----- 路由注册表
-│   ├── core                                    ----- 核心功能模块
-│   │   ├── doc_loaders                         ----- 文档加载器
-│   │   ├── runner                              ----- runner运行要逻辑
-│   │   └── tools                               ----- Tools 实现
-│   ├── exceptions                              ----- 自定义异常类
-│   ├── models                                  ----- db模型目录
-│   ├── providers                               ----- 核心服务提供者
-│   │   ├── middleware                          ----- 自定义中间件
-│   │   ├── app_provider.py                     ----- 注册应用的全局事件、中间件等
-│   │   ├── celery_app.py                       ----- 任务调度器
-│   │   ├── database.py                         ----- 数据库连接
-│   │   ├── handle_exception.py                 ----- 异常处理器
-│   │   ├── logging_provider.py                 ----- 集成loguru日志系统
-│   │   ├── pagination_provider.py              ----- 分页插件
-│   │   ├── response.py                         ----- 定义http统一响应体
-│   │   ├── route_provider.py                   ----- 注册路由文件routes/*
-│   │   └── storage.py                          ----- 对象存储
-│   ├── schemas                                 ----- 数据模型
-│   ├── services                                ----- 业务逻辑层
-│   ├── libs                                    ----- 工具库
+│   ├── api                                     ----- API controller directory
+│   │   ├── v1                                  ----- API v1 version
+│   │   ├── deps.py                             ----- Dependency injection items
+│   │   └── routes.py                           ----- Route registry
+│   ├── core                                    ----- Core function module
+│   │   ├── doc_loaders                         ----- Document loaders
+│   │   ├── runner                              ----- Runner operation logic
+│   │   └── tools                               ----- Tools implementation
+│   ├── exceptions                              ----- Custom exception classes
+│   ├── models                                  ----- DB model directory
+│   ├── providers                               ----- Core service providers
+│   │   ├── middleware                          ----- Custom middleware
+│   │   ├── app_provider.py                     ----- Register application's global events, middleware, etc.
+│   │   ├── celery_app.py                       ----- Task scheduler
+│   │   ├── database.py                         ----- Database connection
+│   │   ├── handle_exception.py                 ----- Exception handler
+│   │   ├── logging_provider.py                 ----- Integrated loguru logging system
+│   │   ├── pagination_provider.py              ----- Pagination plugin
+│   │   ├── response.py                         ----- Define HTTP unified response body
+│   │   ├── route_provider.py                   ----- Register route files routes/*
+│   │   └── storage.py                          ----- Object storage
+│   ├── schemas                                 ----- Data models
+│   ├── services                                ----- Business logic layer
+│   ├── libs                                    ----- Utility library
 │   │   └── util.py
-│   └── tasks                                   ----- 任务
+│   └── tasks                                   ----- Tasks
 │       └── run_task.py
-├── config                                      ----- 配置目录
-│   ├── celery.py                               ----- 调度器配置
-│   ├── config.py                               ----- app配置
-│   ├── database.py                             ----- 数据库配置
-│   ├── storage.py                              ----- 对象存储配置
-│   ├── llm.py                                  ----- 大模型相关配置
-│   └── logging.py                              ----- 日志配置
-├── migrations                                  ----- 数据库迁移
-├── main.py                                     ----- app/api启动入口
+├── config                                      ----- Configuration directory
+│   ├── celery.py                               ----- Scheduler configuration
+│   ├── config.py                               ----- App configuration
+│   ├── database.py                             ----- Database configuration
+│   ├── storage.py                              ----- Object storage configuration
+│   ├── llm.py                                  ----- Large model related configuration
+│   └── logging.py                              ----- Logging configuration
+├── migrations                                  ----- Database migrations
+├── main.py                                     ----- App/API startup entry
 ├── poetry.lock
-├── pyproject.toml                              ----- 项目依赖管理
-├── logs                                        ----- 日志目录
-├── volumes                                     ----- docker数据卷
-├── tests                                       ----- 测试目录
-│   ├── e2e                                     ----- 端到端测试
-│   └── unit                                    ----- 单元测试
-├── docker                                      ----- docker镜像相关
-├── docs                                        ----- 文档
-└── worker.py                                   ----- 调度任务启动入口
+├── pyproject.toml                              ----- Project dependency management
+├── logs                                        ----- Log directory
+├── volumes                                     ----- Docker data volumes
+├── tests                                       ----- Test directory
+│   ├── e2e                                     ----- End-to-end tests
+│   └── unit                                    ----- Unit tests
+├── docker                                      ----- Docker image related
+├── docs                                        ----- Documentation
+└── worker.py                                   ----- Task scheduling startup entry
 ```
 
-## 本地运行
+## Local Running
 
-### 环境准备
+### Environment Preparation
 
-开发环境:
+Development environment:
 
 - Python >= 3.10
 - [Poetry](https://python-poetry.org/docs/#installation)
 
-安装 poetry
+Install poetry
 
 ```sh
 curl -sSL https://install.python-poetry.org | python3 -
 
-# 或者
+# or
 pip install poetry
 ```
 
-安装依赖:
+Install dependencies:
 
 ```sh
 poetry install --no-root
 ```
 
-### 配置
+### Configuration
 
-创建配置文件
+Create configuration file
 
 ```sh
 cp .env.example .env
 ```
 
-配置 openai api_key 和 bing search key
+Configure openai api_key and bing search key
 
 ```sh
 # openai api_key
@@ -134,77 +137,77 @@ OPENAI_API_KEY=<openai_api_key>
 BING_SUBSCRIPTION_KEY=<bing_subscription_key>
 ```
 
-### 部署中间件 (mysql, redis, minio)
+### Deploy Middleware (mysql, redis, minio)
 
 ```sh
 docker compose -f docker-compose.middleware.yml up -d
 ```
 
-### 启动应用
+### Start Application
 
-#### 初始化数据库
+#### Initialize Database
 
-首次启动和版本升级时需要运行以下命令数据库生成数据库表:
+The following command needs to be run to generate the database table when first starting and upgrading the version:
 
 ```sh
 alembic upgrade head
 ```
 
-#### 启动 API
+#### Start API
 
 ```sh
 python main.py
 ```
 
-#### 启动调度器
+#### Start Scheduler
 
 ```sh
 celery -A worker.celery_app worker -c 1 --loglevel DEBUG
 ```
 
-### 访问 API
+### Access API
 
 Api Base URL: http://127.0.0.1:8086/api/v1
 
-接口文档地址: http://127.0.0.1:8086/docs
+Interface documentation address: http://127.0.0.1:8086/docs
 
-## 代码格式
+## Code Format
 
-代码提交前请先运行以下命令检查代码规范。
+Please run the following command to check the code specification before submitting the code.
 
-#### 检查代码是否需要格式化
+#### Check if the code needs to be formatted
 
 ```sh
 make lint
 ```
 
-#### 格式化代码
+#### Format Code
 
 ```sh
 make format
 ```
 
-## 数据库迁移 (改变 DB Model 时使用)
+## Database Migration (Use when changing DB Model)
 
-#### 生成迁移脚本
+#### Generate Migration Script
 
 ```sh
 alembic revision --autogenerate
 ```
 
-#### 执行迁移脚本
+#### Execute Migration Script
 
 ```sh
 alembic upgrade head
 ```
 
-## 构建 docker 镜像
+## Build Docker Image
 
 ```sh
 docker build -t open-assistant-api .
 ```
 
-## 部署
+## Deployment
 
 ```sh
 docker compose up -d
