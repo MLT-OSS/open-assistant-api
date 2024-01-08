@@ -10,6 +10,7 @@ class BaseToolInput(BaseModel):
     """
     Base schema for tool input arguments.
     """
+
     input: str = Field(..., description="input")
 
 

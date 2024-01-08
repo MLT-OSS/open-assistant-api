@@ -109,7 +109,9 @@ class RunService:
         return db_run
 
     @staticmethod
-    def submit_tool_outputs_to_run(*, session: Session, thread_id, run_id, body: SubmitToolOutputsRunRequest) -> RunRead:
+    def submit_tool_outputs_to_run(
+        *, session: Session, thread_id, run_id, body: SubmitToolOutputsRunRequest
+    ) -> RunRead:
         # get run
         db_run = RunService.get_run(session=session, run_id=run_id, thread_id=thread_id)
         # get run_step

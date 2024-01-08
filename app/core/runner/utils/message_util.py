@@ -10,7 +10,6 @@ Functions:
 - tool_call_result(id, content) -> dict: Creates a tool call result message with the specified ID and content.
 - is_tool_call(message: ChatCompletionMessage) -> bool: Checks if a message is a tool call.
 """
-from typing import List
 from openai.types.chat import ChatCompletionMessage
 
 
