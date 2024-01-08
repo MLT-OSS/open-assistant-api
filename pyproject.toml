@@ -5,11 +5,6 @@ description = ""
 authors = ["李猛 <limeng.b@mininglamp.com>"]
 readme = "README.md"
 
-[[tool.poetry.source]]
-name = "mirrors"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-priority = "default"
-
 [tool.black]
 target-version = ["py310"]
 line-length = 120
