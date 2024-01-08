@@ -1,14 +1,13 @@
 FROM python:3.10-slim AS base
 
-LABEL maintainer="limeng.b@mininglamp.com"
+LABEL maintainer="limeng1300881350@gmail.com"
 
-COPY docker/sources.list /etc/apt/sources.list
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash curl wget vim libmagic-dev \
     && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ --no-cache-dir poetry \
+RUN pip install --no-cache-dir poetry \
     && poetry config virtualenvs.create false
 
 COPY poetry.lock /env/poetry.lock
