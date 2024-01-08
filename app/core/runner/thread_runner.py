@@ -6,7 +6,7 @@ from concurrent.futures import Executor
 from config.llm import llm_settings, tool_settings
 
 from app.api.deps import get_session
-import app.core.runner.utils.message_util as msg
+import app.core.runner.utils.message_util as msg_util
 from app.core.runner.utils.tool_call_util import (
     tool_call_recognize,
     internal_tool_call_invoke,
@@ -46,6 +46,7 @@ class ThreadRunner:
         3. 调用 llm 并解析返回结果;
         4. 根据返回结果，生成新的 run step(tool calls 处理) 或者 message
         """
+        # TODO: 重构，将 run 的状态变更逻辑放到 RunService 中
         run = RunService.get_run(session=self.session, run_id=self.run_id)
         run = RunService.to_in_progress(session=self.session, run_id=self.run_id)
         logging.info("processing ThreadRunner task, run_id: %s", self.run_id)
@@ -73,7 +74,7 @@ class ThreadRunner:
         """
         logging.info("step %d is running", len(run_steps) + 1)
 
-        assistant_system_message = [msg.system_message(instruction)]
+        assistant_system_message = [msg_util.system_message(instruction)]
 
         # 获取已有 message 上下文记录
         chat_messages = self.__generate_chat_messages(
@@ -95,7 +96,7 @@ class ThreadRunner:
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
         )
 
-        if msg.is_tool_call(response_msg):
+        if msg_util.is_tool_call(response_msg):
             # tool & tool_call definition dict
             tool_calls = [tool_call_recognize(tool_call, tools) for tool_call in response_msg.tool_calls]
 
@@ -109,7 +110,7 @@ class ThreadRunner:
                 step_details={"type": "tool_calls", "tool_calls": [tool_call_dict for _, tool_call_dict in tool_calls]},
             )
 
-            internal_tool_calls = list(filter(lambda tool_calls: tool_calls[0] is not None, tool_calls))
+            internal_tool_calls = list(filter(lambda _tool_calls: _tool_calls[0] is not None, tool_calls))
             external_tool_call_dict = [tool_call_dict for tool, tool_call_dict in tool_calls if tool is None]
 
             # 为减少线程同步逻辑，依次处理内/外 tool_call 调用
@@ -179,7 +180,7 @@ class ThreadRunner:
 
             if role == "system" or role == "assistant" or role == "user":
                 message_content = message.content[0]["text"]["value"]
-                return msg.new_message(role, message_content)
+                return msg_util.new_message(role, message_content)
             else:
                 pass
 
@@ -191,8 +192,8 @@ class ThreadRunner:
         每个 tool call run step 包含两部分，调用与结果(结果可能为多个信息)
         """
         tool_calls = run_step.step_details["tool_calls"]
-        tool_call_requests = [msg.tool_calls([tool_call_request(tool_call) for tool_call in tool_calls])]
+        tool_call_requests = [msg_util.tool_calls([tool_call_request(tool_call) for tool_call in tool_calls])]
         tool_call_outputs = [
-            msg.tool_call_result(tool_call_id(tool_call), tool_call_output(tool_call)) for tool_call in tool_calls
+            msg_util.tool_call_result(tool_call_id(tool_call), tool_call_output(tool_call)) for tool_call in tool_calls
         ]
         return tool_call_requests + tool_call_outputs
