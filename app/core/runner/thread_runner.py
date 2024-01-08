@@ -192,7 +192,7 @@ class ThreadRunner:
         """
         tool_calls = run_step.step_details["tool_calls"]
         tool_call_requests = [msg.tool_calls([tool_call_request(tool_call) for tool_call in tool_calls])]
-        tool_call_outpus = [
+        tool_call_outputs = [
             msg.tool_call_result(tool_call_id(tool_call), tool_call_output(tool_call)) for tool_call in tool_calls
         ]
-        return tool_call_requests + tool_call_outpus
+        return tool_call_requests + tool_call_outputs
