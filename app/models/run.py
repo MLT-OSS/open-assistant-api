@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Column, Enum
-from sqlmodel import Field, JSON
+from sqlmodel import Field, JSON, TEXT
 
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
 
 
 class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
-    instructions: str = Field(default=None)
+    instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
     model: str = Field(default=None)
     status: str = Field(
         default="queued",
