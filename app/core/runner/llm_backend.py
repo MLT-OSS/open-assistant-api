@@ -25,4 +25,5 @@ class LLMBackend:
         }
         logging.info(f"chat_params: {chat_params}")
         response = openai.chat.completions.create(**chat_params)
+        logging.info(f"chat_response: {response}")
         return response.choices[0].message
