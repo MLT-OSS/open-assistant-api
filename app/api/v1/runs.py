@@ -124,7 +124,7 @@ def get_run_step(
     "/{thread_id}/runs/{run_id}/submit_tool_outputs",
     response_model=RunRead,
 )
-def submit_tool_ouputs_to_run(
+def submit_tool_outputs_to_run(
     *,
     session: Session = Depends(get_session),
     thread_id: str,
@@ -136,7 +136,7 @@ def submit_tool_ouputs_to_run(
     this endpoint can be used to submit the outputs from the tool calls once they're all completed.
     All outputs must be submitted in a single request.
     """
-    db_run = RunService.submit_tool_ouputs_to_run(session=session, thread_id=thread_id, run_id=run_id, body=body)
+    db_run = RunService.submit_tool_outputs_to_run(session=session, thread_id=thread_id, run_id=run_id, body=body)
     # Resume async task
     if db_run.status == "queued":
         run_task.apply_async(args=(db_run.id,))
