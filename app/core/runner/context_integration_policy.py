@@ -9,6 +9,7 @@ class ContextIntegrationPolicy(ABC):
     """
     整合策略接口
     """
+
     @abstractmethod
     def integrate_context(self, messages: List[dict]) -> List[dict]:
         """
@@ -20,6 +21,7 @@ class DefaultContextIntegrationPolicy(ContextIntegrationPolicy):
     """
     默认不进行处理
     """
+
     def integrate_context(self, messages: List[dict]) -> List[dict]:
         return messages
 

@@ -8,6 +8,12 @@ readme = "README.md"
 [tool.black]
 target-version = ["py310"]
 line-length = 120
+exclude = '''(
+  /(
+      migrations
+    | tests/e2e
+  )/
+)'''
 
 [tool.ruff]
 exclude = ["migrations", "tests/e2e"]

@@ -30,6 +30,7 @@ class ThreadRunner:
     """
     ThreadRunner 封装 run 的执行逻辑
     """
+
     tool_executor: Executor = get_executor_for_config(tool_settings.TOOL_WORKER_NUM, "tool_worker_")
 
     def __init__(self, run_id: str):
