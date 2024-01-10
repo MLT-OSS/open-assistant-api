@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
 from app.api.deps import get_session
-from app.models.assistant import Assistant, AssistantUpdate
+from app.models.assistant import Assistant, AssistantUpdate, AssistantCreate
 from app.libs.paginate import cursor_page, CommonPage
 from app.schemas.common import DeleteResponse
 from app.services.assistant.assistant import AssistantService
@@ -19,7 +19,7 @@ def list_assistants(*, session: Session = Depends(get_session)):
 
 
 @router.post("", response_model=Assistant)
-def create_assistant(*, session: Session = Depends(get_session), body: Assistant) -> Assistant:
+def create_assistant(*, session: Session = Depends(get_session), body: AssistantCreate) -> Assistant:
     """
     Create an assistant with a model and instructions.
     """

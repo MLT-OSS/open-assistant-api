@@ -1,17 +1,18 @@
 from sqlmodel import Session, select
 
 from app.exceptions.exception import ResourceNotFoundError
-from app.models.assistant import Assistant, AssistantUpdate
+from app.models.assistant import Assistant, AssistantUpdate, AssistantCreate
 from app.schemas.common import DeleteResponse
 
 
 class AssistantService:
     @staticmethod
-    def create_assistant(*, session: Session, body: Assistant) -> Assistant:
-        session.add(body)
+    def create_assistant(*, session: Session, body: AssistantCreate) -> Assistant:
+        db_assistant = Assistant.model_validate(body)
+        session.add(db_assistant)
         session.commit()
-        session.refresh(body)
-        return body
+        session.refresh(db_assistant)
+        return db_assistant
 
     @staticmethod
     def modify_assistant(*, session: Session, assistant_id: str, body: AssistantUpdate) -> Assistant:
