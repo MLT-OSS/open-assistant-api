@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    image: open-assistant-api:latest
+    image: samepaage/open-assistant-api:main
     restart: always
     build: .
     volumes:
@@ -57,7 +57,7 @@ services:
 
 
   worker:
-    image: open-assistant-api:latest
+    image: samepaage/open-assistant-api:main
     restart: always
     build: .
     volumes:
