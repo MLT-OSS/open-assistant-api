@@ -1,6 +1,6 @@
 FROM python:3.10-slim AS base
 
-LABEL maintainer="limeng1300881350@gmail.com"
+LABEL maintainer="tuanzi1015@gmail.com"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash curl wget vim libmagic-dev \

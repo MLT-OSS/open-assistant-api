@@ -2,7 +2,7 @@
 name = "open-assistant-api"
 version = "0.1.0"
 description = ""
-authors = ["李猛 <limeng.b@mininglamp.com>"]
+authors = ["Tuanzi1015 <tuanzi1015@gmail.com>"]
 readme = "README.md"
 
 [tool.black]
