@@ -89,6 +89,18 @@ class ResourceNotFoundError(BaseHTTPException):
         self.type = "not_found_error"
 
 
+class InternalServerError(BaseHTTPException):
+    """
+    服务器内部异常
+    """
+
+    def __init__(self, message: str = "Internal Server Error", error_code: str = "internal_server_error"):
+        self.status_code = 500
+        self.message = message
+        self.error_code = error_code
+        self.type = error_code
+
+
 class ServerError(BaseException):
     """
     服务端异常

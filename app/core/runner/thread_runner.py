@@ -3,6 +3,7 @@ import logging
 from typing import List
 from concurrent.futures import Executor
 
+from app.core.runner.llm_callback_handler import LLMCallbackHandler
 from config.llm import llm_settings, tool_settings
 
 from app.api.deps import get_session
@@ -90,12 +91,32 @@ class ThreadRunner:
         messages = context_integration_policy.integrate_context(
             assistant_system_message + chat_messages + tool_call_messages
         )
-        response_msg = self.llm.run(
+        # TODO: It is necessary to decide whether to use stream based on configuration
+        response_stream = self.llm.run(
             messages=messages,
             model=run.model,
             tools=[tool.openai_function for tool in tools],
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
+            stream=True,
         )
+
+        # create message creation run step callback
+        def _create_message_creation_run_step():
+            return RunStepService.new_run_step(
+                session=self.session,
+                type="message_creation",
+                assistant_id=run.assistant_id,
+                thread_id=run.thread_id,
+                run_id=run.id,
+                step_details={"type": "message_creation"},
+            )
+
+        llm_callback_handler = LLMCallbackHandler(
+            run_id=run.id, on_final_message_start_func=_create_message_creation_run_step
+        )
+        response_msg = llm_callback_handler.handle_llm_response(response_stream)
+        message_creation_run_step = llm_callback_handler.on_final_message_start_func_output
+        logging.info(f"chat_response_message: {response_msg}")
 
         if msg_util.is_tool_call(response_msg):
             # tool & tool_call definition dict
@@ -156,14 +177,11 @@ class ThreadRunner:
                 run_id=run.id,
             )
 
-            RunStepService.new_run_step(
+            RunStepService.update_step_details(
                 session=self.session,
-                type="message_creation",
-                assistant_id=run.assistant_id,
-                thread_id=run.thread_id,
-                status="completed",
-                run_id=run.id,
+                run_step_id=message_creation_run_step.id,
                 step_details={"type": "message_creation", "message_creation": {"message_id": new_message.id}},
+                completed=True,
             )
             RunService.to_completed(session=self.session, run_id=run.id)
 
