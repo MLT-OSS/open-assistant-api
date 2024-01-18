@@ -40,6 +40,7 @@ class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
     cancelled_at: Optional[Timestamp] = Field(default=None)
     expires_at: Optional[Timestamp] = Field(default=None)
     failed_at: Optional[Timestamp] = Field(default=None)
+    additional_instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
 
 
 class RunRead(Run):
@@ -50,6 +51,7 @@ class RunCreate(BaseModel):
     assistant_id: str
     status: str = "queued"
     instructions: str = None
+    additional_instructions: str = None
     model: str = None
     file_ids: Optional[list] = []
     metadata_: Optional[dict] = Field(default={}, alias="metadata")
