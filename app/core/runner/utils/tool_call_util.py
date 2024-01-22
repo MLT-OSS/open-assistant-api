@@ -37,7 +37,7 @@ def internal_tool_call_invoke(tool: BaseTool, tool_call_dict: dict) -> dict:
     """
     args = json.loads(tool_call_dict["function"]["arguments"])
     output = tool.run(**args)
-    tool_call_dict["function"]["output"] = str(output)
+    tool_call_dict["function"]["output"] = json.dumps(output, ensure_ascii=False)
     return tool_call_dict
 
 
