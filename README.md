@@ -40,21 +40,23 @@ assistant = client.beta.assistants.create(
 
 ## Why Choose Open Assistant API
 
-| Feature            | Open Assistant API    | OpenAI Assistant API |
-|--------------------|-----------------------|----------------------|
-| Ecosystem Strategy | Open Source           | Closed Source        |
-| RAG Engine         | Simple Implementation | Supported            |
-| Internet Search    | Supported             | Not Supported        |
-| Custom Functions   | Supported             | Supported            |
-| Built-in Tool      | Extendable            | Not Extendable       |
-| Code Interpreter   | Under Development     | Supported            |
-| LLM Support        | Supports More LLMs    | Only GPT             |
-| Local Deployment   | Supported             | Not Supported        |
+| Feature                  | Open Assistant API    | OpenAI Assistant API |
+|--------------------------|-----------------------|----------------------|
+| Ecosystem Strategy       | Open Source           | Closed Source        |
+| RAG Engine               | Simple Implementation | Supported            |
+| Internet Search          | Supported             | Not Supported        |
+| Custom Functions         | Supported             | Supported            |
+| Built-in Tool            | Extendable            | Not Extendable       |
+| Code Interpreter         | Under Development     | Supported            |
+| LLM Support              | Supports More LLMs    | Only GPT             |
+| Message Streaming Output | Supports              | Not Supported        |
+| Local Deployment         | Supported             | Not Supported        |
 
 - **LLM Support**: Compared to the official OpenAI version, more models can be supported by integrating with One API.
 - **Tool**: Currently supports online search; can easily expand more tools.
 - **RAG Engine**: The currently supported file types are txt, pdf, html, markdown. We provide a preliminary
   implementation.
+- **Message Streaming Output**: Support message streaming output for a smoother user experience.
 - **Ecosystem Strategy**: Open source, you can deploy the service locally and expand the existing features.
 
 ## Quick Start
@@ -105,7 +107,7 @@ python tests/e2e/index.py
   channel to see new releases, discuss issues, and participate in community interactions.
 - Join the [Discord](https://discord.gg/VfBruz4B) channel to interact with other community members.
 - Join the WeChat group:
- 
+
   ![](docs/imgs/wx.png)
 
 ## Special Thanks
