@@ -48,11 +48,13 @@ assistant = client.beta.assistants.create(
 | 内置 Tool          | 支持扩展               | 不支持扩展                |
 | Code Interpreter | 待开发                | 支持                   |
 | LLM 支持           | 支持更多的 LLM          | 仅 GPT                |
+| Message 流式输出     | 支持                 | 不支持                  |
 | 本地部署             | 支持                 | 不支持                  |
 
 - **LLM 支持**: 相较于 OpenAI 官方版本，可以通过接入 One API 来支持更多的模型。
 - **Tool**: 目前支持联网搜索；可以较容易扩展更多的 Tool。
 - **RAG 引擎**: 目前支持的文件类型有 txt、pdf、html、markdown。我们提供了一个初步的实现。
+- **Message 流式输出**: 支持 Message 流式输出，提供更流畅的用户体验。
 - **生态策略**: 开源，你可以将服务部署在本地，可以对已有功能进行扩展。
 
 ## 快速上手
@@ -101,7 +103,7 @@ python tests/e2e/index.py
   频道，查看新发布的内容，交流问题，参与社区互动。
 - 加入 [Discord](https://discord.gg/VfBruz4B) 频道，与其他社区成员交流。
 - 加入 Open Assistant Api 微信交流群：
- 
+
   ![](docs/imgs/wx.png)
 
 ## 特别感谢
