@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlmodel import Session, select
+from starlette.responses import StreamingResponse
 
 from app.api.deps import get_session
+from app.core.runner import pub_handler
+from app.exceptions.exception import ResourceNotFoundError, InternalServerError
 from app.models import RunStep
 from app.libs.paginate import cursor_page, CommonPage
 from app.models.run import RunCreate, RunRead, RunUpdate, Run
@@ -149,3 +152,40 @@ def create_thread_and_run(*, session: Session = Depends(get_session), body: Crea
     Create a thread and run it in one request.
     """
     return RunService.create_thread_and_run(session=session, body=body)
+
+
+@router.get("/{thread_id}/runs/{run_id}/stream")
+async def sub_stream(*, thread_id: str, run_id: str = ..., request: Request):
+    """
+    Subscription chat response stream
+    """
+
+    channel = pub_handler.generate_channel_name(run_id)
+
+    def _to_output_data(data):
+        return f"data: {data}\n\n"
+
+    async def _stream():
+        x_index = None
+        while True:
+            if await request.is_disconnected():
+                break
+
+            if not pub_handler.channel_exist(channel):
+                raise ResourceNotFoundError()
+
+            x_index, event = pub_handler.read_event(channel, x_index)
+            if not event:
+                break
+
+            if event["type"] == "error":
+                raise InternalServerError()
+
+            if event["type"] == "end":
+                break
+
+            yield _to_output_data(event["data"])
+
+        yield _to_output_data("[DONE]")
+
+    return StreamingResponse(_stream(), media_type="text/event-stream")
