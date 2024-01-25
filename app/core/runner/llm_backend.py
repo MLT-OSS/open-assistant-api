@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-import openai
+from openai import OpenAI
 from openai import Stream
 from openai.types.chat import ChatCompletionChunk, ChatCompletion
 
@@ -14,8 +14,12 @@ class LLMBackend:
     """
 
     def __init__(self, llm_settings: LLMSettings) -> None:
-        openai.base_url = llm_settings.OPENAI_API_BASE + "/" if llm_settings.OPENAI_API_BASE else None
-        openai.api_key = llm_settings.OPENAI_API_KEY
+        self.base_url = llm_settings.OPENAI_API_BASE if llm_settings.OPENAI_API_BASE else None
+        self.api_key = llm_settings.OPENAI_API_KEY
+        self.client = OpenAI(
+          api_key=self.api_key,
+          base_url=self.base_url
+        )
 
     def run(
         self, messages: List, model: str, tools: List = None, tool_choice="auto", stream=False
@@ -23,11 +27,12 @@ class LLMBackend:
         chat_params = {
             "messages": messages,
             "model": model,
-            "tools": tools if tools else None,
-            "tool_choice": tool_choice if tools else None,
             "stream": stream,
         }
+        if tools:
+            chat_params['tools'] = tools
+            chat_params['tool_choice'] = tool_choice if tool_choice else "auto"
         logging.info(f"chat_params: {chat_params}")
-        response = openai.chat.completions.create(**chat_params)
+        response = self.client.chat.completions.create(**chat_params)
         logging.info(f"chat_response: {response}")
         return response
