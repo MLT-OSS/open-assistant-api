@@ -5,6 +5,7 @@ import redis
 from sqlmodel import SQLModel, create_engine
 from sqlalchemy.pool import QueuePool
 
+from config.config import settings
 from config.database import db_settings, redis_settings
 
 db_state_default = {"closed": None, "conn": None, "ctx": None, "transactions": None}
@@ -19,7 +20,7 @@ engine = create_engine(
     poolclass=QueuePool,
     pool_size=db_settings.DB_POOL_SIZE,
     pool_recycle=3600,
-    echo=True,
+    echo=settings.DEBUG,
 )
 
 
