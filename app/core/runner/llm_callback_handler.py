@@ -59,8 +59,9 @@ class LLMCallbackHandler:
                         self.final_message_started = True
                         self.on_final_message_start_func_output = self.on_final_message_start_func()
 
-                if choice.finish_reason and choice.finish_reason != "tool_calls":
-                    pub_handler.pub_event(channel, {"type": "end"})
+            if not message.tool_calls:
+                pub_handler.pub_event(channel, {"type": "end"})
+
         except Exception as e:
             logging.exception(e)
             pub_handler.pub_event(channel, {"type": "error", "data": str(e)})
