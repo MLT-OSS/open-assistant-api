@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     SERVER_WORKERS: int = 8
     API_PREFIX: str = "/api"
 
+    AUTH_ENABLE: bool = False
+    AUTH_ADMIN_TOKEN: str = "admin"
+
     class Config:
         env_prefix = "APP_"
         env_file = ".env"

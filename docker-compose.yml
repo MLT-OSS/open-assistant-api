@@ -19,6 +19,9 @@ services:
       APP_SERVER_WORKERS: 20
       APP_API_PREFIX: /api
 
+      APP_AUTH_ENABLE: false
+      APP_AUTH_ADMIN_TOKEN: admin
+
       LOG_LEVEL: DEBUG
 
       # celery
@@ -67,6 +70,9 @@ services:
       MODE: worker
       APP_DEBUG: true
       APP_ENV: prod
+
+      APP_AUTH_ENABLE: false
+      APP_AUTH_ADMIN_TOKEN: admin
 
       LOG_LEVEL: DEBUG
 

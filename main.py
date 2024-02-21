@@ -1,8 +1,14 @@
 import logging
 
 from fastapi import FastAPI
-
-from app.providers import logging_provider, app_provider, handle_exception, pagination_provider, route_provider
+from app.providers import (
+    logging_provider,
+    app_provider,
+    handle_exception,
+    pagination_provider,
+    route_provider,
+    auth_provider,
+)
 from config.config import settings
 import uvicorn
 
@@ -14,6 +20,7 @@ def create_app() -> FastAPI:
     register(_app, app_provider)
     register(_app, handle_exception)
     register(_app, pagination_provider)
+    register(_app, auth_provider)
 
     boot(_app, route_provider)
 
