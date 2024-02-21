@@ -48,6 +48,7 @@ jobs:
           platforms: |
             linux/amd64
             linux/arm64
+            linux/arm64/v8
           build-args: |
             COMMIT_SHA=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
           push: true
