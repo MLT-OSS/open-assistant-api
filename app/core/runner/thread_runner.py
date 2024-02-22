@@ -1,4 +1,5 @@
 import logging
+import time
 
 from typing import List
 from concurrent.futures import Executor
@@ -99,6 +100,7 @@ class ThreadRunner:
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
             stream=True,
         )
+        time.sleep(5)
 
         # create message creation run step callback
         def _create_message_creation_run_step():
