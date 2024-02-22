@@ -101,6 +101,15 @@ Before running, you need to run `pip install openai` to install the Python `open
 python tests/e2e/index.py
 ```
 
+### Permissions
+Simple user isolation is provided based on tokens to meet SaaS deployment requirements. It can be enabled by configuring `APP_AUTH_ENABLE`.
+
+![](docs/imgs/user.png)
+
+1. The authentication method is Bearer token. You can include `Authorization: Bearer ***` in the header for authentication.
+2. Token management is described in the token section of the API documentation. Relevant APIs need to be authenticated with an admin token, which is configured as `APP_AUTH_ADMIN_TOKEN` and defaults to "admin".
+3. When creating a token, you need to provide the base URL and API key of the large model. The created assistant will use the corresponding configuration to access the large model.
+
 ## Community and Support
 
 - Join the [Slack](https://join.slack.com/t/openassistant-qbu7007/shared_invite/zt-29t8j9y12-9og5KZL6GagXTEvbEDf6UQ)

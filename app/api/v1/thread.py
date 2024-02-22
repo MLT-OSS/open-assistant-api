@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
-from app.api.deps import get_session
+from app.api.deps import get_session, get_token_id
 from app.models.thread import Thread, ThreadUpdate, ThreadCreate
 from app.schemas.common import DeleteResponse
 from app.services.thread.thread import ThreadService
@@ -10,11 +10,13 @@ router = APIRouter()
 
 
 @router.post("", response_model=Thread)
-def create_thread(*, session: Session = Depends(get_session), body: ThreadCreate) -> Thread:
+def create_thread(
+    *, session: Session = Depends(get_session), body: ThreadCreate, token_id=Depends(get_token_id)
+) -> Thread:
     """
     Create a thread.
     """
-    return ThreadService.create_thread(session=session, body=body)
+    return ThreadService.create_thread(session=session, body=body, token_id=token_id)
 
 
 @router.get("/{thread_id}", response_model=Thread)

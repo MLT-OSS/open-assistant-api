@@ -97,6 +97,16 @@ Api Base URL: http://127.0.0.1:8086/api/v1
 python tests/e2e/index.py
 ```
 
+### 权限
+基于 token 提供简单用户隔离，满足 SaaS 部署需求，可通过配置 ```APP_AUTH_ENABLE``` 开启
+
+![](docs/imgs/user.png)
+
+1. 验证方式为 Bearer token，可在 Header 中填入 ```Authorization: Bearer ***``` 进行验证
+2. token 管理参考 api 文档中的 token 小节  
+相关 api 需通过 admin token 验证，配置为 ```APP_AUTH_ADMIN_TOKEN```，默认为 admin
+3. 创建 token 需填入大模型 base_url 和 api_key，创建的 assistant 将使用相关配置访问大模型
+
 ## 社区与支持
 
 - 加入 [Slack](https://join.slack.com/t/openassistant-qbu7007/shared_invite/zt-29t8j9y12-9og5KZL6GagXTEvbEDf6UQ)

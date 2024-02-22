@@ -3,11 +3,15 @@ import logging
 from typing import List
 from concurrent.futures import Executor
 
-from app.core.runner.llm_callback_handler import LLMCallbackHandler
 from config.llm import llm_settings, tool_settings
+from config.config import settings
+
 
 from app.api.deps import get_session
-import app.core.runner.utils.message_util as msg_util
+from app.core.runner.context_integration_policy import context_integration_policy
+from app.core.runner.llm_backend import LLMBackend
+from app.core.runner.llm_callback_handler import LLMCallbackHandler
+from app.core.runner.utils import message_util as msg_util
 from app.core.runner.utils.tool_call_util import (
     tool_call_recognize,
     internal_tool_call_invoke,
@@ -15,16 +19,16 @@ from app.core.runner.utils.tool_call_util import (
     tool_call_id,
     tool_call_output,
 )
-from app.core.runner.llm_backend import LLMBackend
-from app.core.runner.context_integration_policy import context_integration_policy
 from app.core.tools import tool_find, BaseTool
 from app.libs.thread_executor import get_executor_for_config, run_with_executor
-from app.models.run_step import RunStep
-from app.models.run import Run
 from app.models.message import Message
+from app.models.run import Run
+from app.models.run_step import RunStep
 from app.services.message.message import MessageService
 from app.services.run.run import RunService
 from app.services.run.run_step import RunStepService
+from app.services.token.token import TokenService
+from app.services.token.token_relation import TokenRelationService
 
 
 class ThreadRunner:
@@ -37,7 +41,6 @@ class ThreadRunner:
     def __init__(self, run_id: str):
         self.run_id = run_id
         self.session = next(get_session())
-        self.llm = LLMBackend(llm_settings=llm_settings)
         self.max_step = llm_settings.LLM_MAX_STEP
 
     def run(self):
@@ -52,6 +55,8 @@ class ThreadRunner:
         run = RunService.get_run(session=self.session, run_id=self.run_id)
         run = RunService.to_in_progress(session=self.session, run_id=self.run_id)
         logging.info("processing ThreadRunner task, run_id: %s", self.run_id)
+
+        llm = self.__init_llm_backend(run.assistant_id)
 
         tools = [tool_find(tool, lambda tool: tool["type"]) for tool in run.tools]
 
@@ -68,9 +73,9 @@ class ThreadRunner:
             run_steps = RunStepService.get_run_step_list(
                 session=self.session, run_id=self.run_id, thread_id=run.thread_id
             )
-            loop = self.__run_step(run, run_steps, instruction, tools)
+            loop = self.__run_step(llm, run, run_steps, instruction, tools)
 
-    def __run_step(self, run: Run, run_steps: List[RunStep], instruction: str, tools: List[BaseTool]):
+    def __run_step(self, llm: LLMBackend, run: Run, run_steps: List[RunStep], instruction: str, tools: List[BaseTool]):
         """
         执行 run step
         """
@@ -91,8 +96,7 @@ class ThreadRunner:
         messages = context_integration_policy.integrate_context(
             assistant_system_message + chat_messages + tool_call_messages
         )
-        # TODO: It is necessary to decide whether to use stream based on configuration
-        response_stream = self.llm.run(
+        response_stream = llm.run(
             messages=messages,
             model=run.model,
             tools=[tool.openai_function for tool in tools],
@@ -116,7 +120,7 @@ class ThreadRunner:
         )
         response_msg = llm_callback_handler.handle_llm_response(response_stream)
         message_creation_run_step = llm_callback_handler.on_final_message_start_func_output
-        logging.info(f"chat_response_message: {response_msg}")
+        logging.info("chat_response_message: %s", response_msg)
 
         if msg_util.is_tool_call(response_msg):
             # tool & tool_call definition dict
@@ -187,6 +191,18 @@ class ThreadRunner:
 
         # 任务结束
         return False
+
+    def __init_llm_backend(self, assistant_id):
+        if settings.AUTH_ENABLE:
+            # init llm backend with token id
+            token_id = TokenRelationService.get_token_id_by_relation(
+                session=self.session, relation_type="assistant", relation_id=assistant_id
+            )
+            token = TokenService.get_token_by_id(self.session, token_id)
+            return LLMBackend(base_url=token.llm_base_url, api_key=token.llm_api_key)
+        else:
+            # init llm backend with llm settings
+            return LLMBackend(base_url=llm_settings.OPENAI_API_BASE, api_key=llm_settings.OPENAI_API_KEY)
 
     def __generate_chat_messages(self, messages: List[Message]):
         """

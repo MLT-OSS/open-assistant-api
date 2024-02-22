@@ -3,14 +3,19 @@ from sqlmodel import Session, select
 from app.exceptions.exception import ResourceNotFoundError, BadRequestError
 from app.models.message import MessageCreate
 from app.models.thread import Thread, ThreadUpdate, ThreadCreate
+from app.models.token_relation import RelationType
+from app.providers.auth_provider import auth_policy
 from app.schemas.common import DeleteResponse
 
 
 class ThreadService:
     @staticmethod
-    def create_thread(*, session: Session, body: ThreadCreate) -> Thread:
+    def create_thread(*, session: Session, body: ThreadCreate, token_id=None) -> Thread:
         db_thread = Thread.model_validate(body)
         session.add(db_thread)
+        auth_policy.insert_token_rel(
+            session=session, token_id=token_id, relation_type=RelationType.Thread, relation_id=db_thread.id
+        )
         session.commit()
         thread_id = db_thread.id
         # save messages
@@ -43,8 +48,8 @@ class ThreadService:
     def delete_assistant(*, session: Session, thread_id: str) -> DeleteResponse:
         db_thread = ThreadService.get_thread(session=session, thread_id=thread_id)
         session.delete(db_thread)
+        auth_policy.delete_token_rel(session=session, relation_type=RelationType.Thread, relation_id=thread_id)
         session.commit()
-        # TODO 删除关联数据
         return DeleteResponse(id=thread_id, object="thread.deleted", deleted=True)
 
     @staticmethod
