@@ -22,7 +22,7 @@ from app.core.tools.external_function_tool import ExternalFunctionTool
 
 def tool_call_recognize(tool_call: ChatCompletionMessageToolCall, tools: List[BaseTool]) -> (BaseTool, dict):
     """
-    对齐 tool call 和 tool，仅针对内部 tool call
+    对齐 tool call 和 tool,仅针对内部 tool call
     """
     tool_name = tool_call.function.name
     [tool] = [tool for tool in tools if tool.name == tool_name]

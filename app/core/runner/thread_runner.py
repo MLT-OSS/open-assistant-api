@@ -18,7 +18,7 @@ from app.core.runner.utils.tool_call_util import (
 )
 from app.core.runner.llm_backend import LLMBackend
 from app.core.runner.context_integration_policy import context_integration_policy
-from app.core.tools import tool_find, BaseTool
+from app.core.tools import tool_find, BaseTool, filter_delete_tools
 from app.libs.thread_executor import get_executor_for_config, run_with_executor
 from app.models.run_step import RunStep
 from app.models.run import Run
@@ -54,7 +54,8 @@ class ThreadRunner:
         run = RunService.to_in_progress(session=self.session, run_id=self.run_id)
         logging.info("processing ThreadRunner task, run_id: %s", self.run_id)
 
-        tools = [tool_find(tool, lambda tool: tool["type"]) for tool in run.tools]
+        tools = [tool_find(tool, lambda tool: tool["type"], self.session) for tool in run.tools]
+        tools = filter_delete_tools(tools)
 
         instructions = [run.instructions]
         for tool in tools:
@@ -100,7 +101,7 @@ class ThreadRunner:
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
             stream=True,
         )
-        time.sleep(5)
+        time.sleep(2)
 
         # create message creation run step callback
         def _create_message_creation_run_step():

@@ -142,7 +142,7 @@ class ActionService:
                 "query_param_schema": action_param_schema_to_dict(query_param_schema),
                 "body_type": body_type,
                 "body_param_schema": action_param_schema_to_dict(body_param_schema),
-                "function_def": function_def.dict(),
+                "function_def": function_def.dict(exclude_none=True),
                 "openapi_schema": openapi_dict,
             }
         )

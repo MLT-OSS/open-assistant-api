@@ -137,9 +137,9 @@ def call_action_api(
             if "application/json" in response_content_type:
                 data = response.json()
             else:
-                data = response.text()
+                data = response.text
             if response.status_code != 200:
-                error_message = f"API call failed with status {response.status}"
+                error_message = f"API call failed with status {response.status_code}"
                 if data:
                     error_message += f": {data}"
                 return {"status": response.status_code, "error": error_message}

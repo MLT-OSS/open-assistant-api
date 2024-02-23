@@ -63,40 +63,40 @@ if __name__ == "__main__":
     print(run, end="\n\n")
 
     print("checking assistant status. ")
-    # while True:
-    #     run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-    #     run_steps = client.beta.threads.runs.steps.list(run_id=run.id, thread_id=thread.id).data
-    #     for run_step in run_steps:
-    #         print(run_step)
-    #         tool_calls = run_step.step_details.type == "tool_calls" and run_step.step_details.tool_calls
-    #         if run.status == "requires_action" and run_step.status == "in_progress" and tool_calls:
-    #             for tool_call in tool_calls:
-    #                 try:
-    #                     client.beta.threads.runs.submit_tool_outputs(
-    #                         run_id=run.id,
-    #                         thread_id=thread.id,
-    #                         # fake output
-    #                         tool_outputs=[ToolOutput(output="666", tool_call_id=tool_call.id)],
-    #                     )
-    #                 except Exception:
-    #                     pass
+    while True:
+        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        run_steps = client.beta.threads.runs.steps.list(run_id=run.id, thread_id=thread.id).data
+        for run_step in run_steps:
+            print(run_step)
+            tool_calls = run_step.step_details.type == "tool_calls" and run_step.step_details.tool_calls
+            if run.status == "requires_action" and run_step.status == "in_progress" and tool_calls:
+                for tool_call in tool_calls:
+                    try:
+                        client.beta.threads.runs.submit_tool_outputs(
+                            run_id=run.id,
+                            thread_id=thread.id,
+                            # fake output
+                            tool_outputs=[ToolOutput(output="666", tool_call_id=tool_call.id)],
+                        )
+                    except Exception:
+                        pass
 
-    #     run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 
-    #     if run.status == "completed":
-    #         print("done!", end="\n\n")
-    #         messages = client.beta.threads.messages.list(thread_id=thread.id)
+        if run.status == "completed":
+            print("done!", end="\n\n")
+            messages = client.beta.threads.messages.list(thread_id=thread.id)
 
-    #         print("messages: ")
-    #         for message in messages:
-    #             assert message.content[0].type == "text"
-    #             print(messages)
-    #             print({"role": message.role, "message": message.content[0].text.value})
+            print("messages: ")
+            for message in messages:
+                assert message.content[0].type == "text"
+                print(messages)
+                print({"role": message.role, "message": message.content[0].text.value})
 
-    #         # delete asst
-    #         # client.beta.assistants.delete(assistant.id)
+            # delete asst
+            # client.beta.assistants.delete(assistant.id)
 
-    #         break
-    #     else:
-    #         print("\nin progress...")
-    #         time.sleep(5)
+            break
+        else:
+            print("\nin progress...")
+            time.sleep(5)
