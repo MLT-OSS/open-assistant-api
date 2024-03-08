@@ -47,19 +47,13 @@ class RunService:
     ) -> RunRead:
         ThreadService.get_thread(session=session, thread_id=thread_id)
         old_run = RunService.get_run(session=session, run_id=run_id)
-        db_run = Run.model_validate(
-            body,
-            update={
-                "run_id": run_id,
-                "thread_id": thread_id,
-                "status": old_run.status,
-                "assistant_id": old_run.assistant_id,
-            },
-        )
-        session.add(db_run)
+        update_data = body.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(old_run, key, value)
+        session.add(old_run)
         session.commit()
-        session.refresh(db_run)
-        return db_run
+        session.refresh(old_run)
+        return old_run
 
     @staticmethod
     def create_thread_and_run(
