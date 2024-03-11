@@ -8,6 +8,7 @@ from config.config import settings
 
 
 from app.api.deps import get_session
+from app.core.doc_loaders import doc_loader
 from app.core.runner.context_integration_policy import context_integration_policy
 from app.core.runner.llm_backend import LLMBackend
 from app.core.runner.llm_callback_handler import LLMCallbackHandler
@@ -24,6 +25,9 @@ from app.libs.thread_executor import get_executor_for_config, run_with_executor
 from app.models.message import Message
 from app.models.run import Run
 from app.models.run_step import RunStep
+from app.models.file import File
+from app.providers.storage import storage
+from app.services.file.file import FileService
 from app.services.message.message import MessageService
 from app.services.run.run import RunService
 from app.services.run.run_step import RunStepService
@@ -208,18 +212,25 @@ class ThreadRunner:
         """
         根据历史信息生成 chat message
         """
+        def file_load(file: File):
+            file_data = storage.load(file.key)
+            content = doc_loader.load(file_data)
+            return f"For reference, here is is the content of file {file.filename}: '{content}'"
 
-        # message 构造
-        def message_mapping(message: Message):
+        chat_messages = []
+        for message in messages:
             role = message.role
 
             if role == "system" or role == "assistant" or role == "user":
-                message_content = message.content[0]["text"]["value"]
-                return msg_util.new_message(role, message_content)
-            else:
-                pass
-
-        return [message_mapping(msg) for msg in messages]
+                message_content = []
+                if role == "user" and message.file_ids:
+                    files = FileService.get_file_list_by_ids(session=self.session, file_ids=message.file_ids)
+                    for file in files:
+                        chat_messages.append(msg_util.new_message(role, file_load(file)))
+                else:
+                    message_content = message.content[0]["text"]["value"]
+                    chat_messages.append(msg_util.new_message(role, message_content))
+        return chat_messages
 
     def __convert_assistant_tool_calls_to_chat_messages(self, run_step: RunStep):
         """
