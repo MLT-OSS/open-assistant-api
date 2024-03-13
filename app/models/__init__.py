@@ -1,3 +1,4 @@
+from app.models.action import Action
 from app.models.assistant import Assistant
 from app.models.assistant_file import AssistantFile
 from app.models.file import File
@@ -21,4 +22,5 @@ __all__ = [
     "Thread",
     "Token",
     "TokenRelation",
+    "Action",
 ]

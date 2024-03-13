@@ -20,7 +20,7 @@ from app.core.runner.utils.tool_call_util import (
     tool_call_id,
     tool_call_output,
 )
-from app.core.tools import tool_find, BaseTool
+from app.core.tools import find_tools, BaseTool
 from app.libs.thread_executor import get_executor_for_config, run_with_executor
 from app.models.message import Message
 from app.models.run import Run
@@ -62,7 +62,7 @@ class ThreadRunner:
 
         llm = self.__init_llm_backend(run.assistant_id)
 
-        tools = [tool_find(tool, lambda tool: tool["type"]) for tool in run.tools]
+        tools = find_tools(run, self.session)
 
         instructions = [run.instructions]
         for tool in tools:
@@ -212,6 +212,7 @@ class ThreadRunner:
         """
         根据历史信息生成 chat message
         """
+
         def file_load(file: File):
             file_data = storage.load(file.key)
             content = doc_loader.load(file_data)

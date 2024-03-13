@@ -1,10 +1,14 @@
-from typing import Optional
+from typing import Optional, Any
 
 from sqlalchemy import Column, Enum
-from sqlmodel import Field, JSON, TEXT
+from sqlalchemy.sql.sqltypes import JSON, TEXT
+from sqlmodel import Field
+
+from pydantic import root_validator
 
 from app.libs.types import Timestamp
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
+from app.schemas.tool.authentication import Authentication
 
 
 class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
@@ -41,6 +45,7 @@ class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
     expires_at: Optional[Timestamp] = Field(default=None)
     failed_at: Optional[Timestamp] = Field(default=None)
     additional_instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
+    extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
 
 
 class RunRead(Run):
@@ -56,8 +61,30 @@ class RunCreate(BaseModel):
     file_ids: Optional[list] = []
     metadata_: Optional[dict] = Field(default={}, alias="metadata")
     tools: Optional[list] = []
+    extra_body: Optional[dict[str, dict[str, Authentication]]] = {}
+
+    @root_validator()
+    def root_validator(cls, data: Any):
+        extra_body = data.get("extra_body")
+        if extra_body:
+            action_authentications = extra_body.get("action_authentications")
+            if action_authentications:
+                res = action_authentications.values()
+                [i.encrypt() for i in res]
+        return data
 
 
 class RunUpdate(BaseModel):
     tools: Optional[list] = []
     metadata_: Optional[dict] = Field(alias="metadata")
+    extra_body: Optional[dict[str, Authentication]] = {}
+
+    @root_validator()
+    def root_validator(cls, data: Any):
+        extra_body = data.get("extra_body")
+        if extra_body:
+            action_authentications = extra_body.get("action_authentications")
+            if action_authentications:
+                res = action_authentications.values()
+                [i.encrypt() for i in res]
+        return data

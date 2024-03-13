@@ -31,7 +31,7 @@ class RunService:
         if not body.tools and db_asst.tools:
             body.tools = db_asst.tools
         # create run
-        db_run = Run.model_validate(body, update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
+        db_run = Run.model_validate(body.model_dump(), update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
         session.add(db_run)
         session.commit()
         session.refresh(db_run)
