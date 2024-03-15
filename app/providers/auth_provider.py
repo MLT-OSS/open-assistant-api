@@ -45,7 +45,7 @@ class SimpleTokenAuthPolicy(AuthPolicy):
         """
         add auth verify dependents to path router
         """
-        from app.api.v1 import assistant, assistant_file, thread, message, runs
+        from app.api.v1 import assistant, assistant_file, thread, message, runs, action
 
         verify_assistant_depends = Depends(
             verify_token_relation(relation_type=RelationType.Assistant, name="assistant_id")
@@ -64,6 +64,14 @@ class SimpleTokenAuthPolicy(AuthPolicy):
                 route.dependencies.append(Depends(verfiy_token))
             else:
                 route.dependencies.append(verify_thread_depends)
+
+        # action router
+        verify_action_depends = Depends(verify_token_relation(relation_type=RelationType.Action, name="action_id"))
+        for route in action.router.routes:
+            if route.name == action.create_actions.__name__ or route.name == action.list_actions.__name__:
+                route.dependencies.append(Depends(verfiy_token))
+            else:
+                route.dependencies.append(verify_action_depends)
 
         self.__append_deps_for_all_routes(assistant_file.router, verify_assistant_depends)
         self.__append_deps_for_all_routes(message.router, verify_thread_depends)

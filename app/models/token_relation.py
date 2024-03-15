@@ -8,6 +8,7 @@ class RelationType(str, Enum):
     Assistant = "assistant"
     File = "file"
     Thread = "thread"
+    Action = "action"
 
 
 class TokenRelationBase(BaseModel):
