@@ -1,7 +1,7 @@
 from sqlalchemy import Column, JSON
 from typing import Optional
 
-from sqlmodel import Field, Boolean
+from sqlmodel import Field
 
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
 
@@ -27,5 +27,4 @@ class ActionBase(BaseModel):
 
 
 class Action(ActionBase, PrimaryKeyMixin, TimeStampMixin, table=True):
-
     object: str = Field(nullable=False, default="action")

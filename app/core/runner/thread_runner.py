@@ -106,6 +106,7 @@ class ThreadRunner:
             tools=[tool.openai_function for tool in tools],
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
             stream=True,
+            extra_body=run.extra_body,
         )
 
         # create message creation run step callback

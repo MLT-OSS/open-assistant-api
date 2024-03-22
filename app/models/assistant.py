@@ -14,6 +14,7 @@ class AssistantBase(BaseModel):
     metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON))
     name: Optional[str] = Field(default=None)
     tools: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    extra_body: Optional[dict] = Field(default=None, sa_column=Column(JSON))
 
 
 class Assistant(AssistantBase, PrimaryKeyMixin, TimeStampMixin, table=True):

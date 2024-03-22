@@ -30,6 +30,8 @@ class RunService:
             body.instructions = db_asst.instructions
         if not body.tools and db_asst.tools:
             body.tools = db_asst.tools
+        if not body.extra_body and db_asst.extra_body:
+            body.extra_body = db_asst.extra_body
         # create run
         db_run = Run.model_validate(body.model_dump(), update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
         session.add(db_run)
