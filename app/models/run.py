@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Optional, Any, Union
 
 from sqlalchemy import Column, Enum
 from sqlalchemy.sql.sqltypes import JSON, TEXT
@@ -61,7 +61,7 @@ class RunCreate(BaseModel):
     file_ids: Optional[list] = []
     metadata_: Optional[dict] = Field(default={}, alias="metadata")
     tools: Optional[list] = []
-    extra_body: Optional[dict[str, dict[str, Authentication]]] = {}
+    extra_body: Optional[dict[str, Union[dict[str, Union[Authentication, Any]], Any]]] = {}
 
     @root_validator()
     def root_validator(cls, data: Any):
