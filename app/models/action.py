@@ -23,7 +23,7 @@ class ActionBase(BaseModel):
     body_param_schema: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     body_type: str = Field(nullable=False)
     function_def: Optional[dict] = Field(default=None, sa_column=Column(JSON))
-    use_for_everyone: bool = Field(default=False, sa_column=Column(Boolean, default=False))
+    use_for_everyone: bool = Field(default=False, nullable=False)
 
 
 class Action(ActionBase, PrimaryKeyMixin, TimeStampMixin, table=True):

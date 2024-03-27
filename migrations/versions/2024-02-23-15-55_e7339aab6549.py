@@ -47,7 +47,7 @@ def upgrade() -> None:
     )
     op.add_column("run", sa.Column("extra_body", sa.JSON(), nullable=True))
     op.execute(
-        " ALTER TABLE open_assistant.token_relation MODIFY COLUMN relation_type enum('Assistant','File','Thread','Action') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;"
+        " ALTER TABLE token_relation MODIFY COLUMN relation_type enum('Assistant','File','Thread','Action') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;"
     )
     # ### end Alembic commands ###
 
@@ -57,6 +57,6 @@ def downgrade() -> None:
     op.drop_table("action")
     op.drop_column("run", "extra_body")
     op.execute(
-        "ALTER TABLE open_assistant.token_relation MODIFY COLUMN relation_type enum('Assistant','File','Thread') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;"
+        "ALTER TABLE token_relation MODIFY COLUMN relation_type enum('Assistant','File','Thread') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;"
     )
     # ### end Alembic commands ###
