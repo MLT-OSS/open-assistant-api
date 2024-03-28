@@ -74,3 +74,21 @@ class MessageService:
         if msg_file is None:
             raise ResourceNotFoundError(message="Message file not found")
         return msg_file
+
+    @staticmethod
+    def copy_messages(*, session: Session, from_thread_id: str, to_thread_id: str, end_message_id: str):
+        """
+        copy thread messages to another thread
+        """
+        statement = select(Message).where(Message.thread_id == from_thread_id)
+        if end_message_id:
+            statement = statement.where(Message.id <= end_message_id)
+        original_messages = session.exec(statement.order_by(Message.id))
+
+        for original_message in original_messages:
+            new_message = Message(
+                thread_id=to_thread_id,
+                **original_message.model_dump(exclude={"id", "created_at", "updated_at", "thread_id"})
+            )
+            session.add(new_message)
+        session.commit()

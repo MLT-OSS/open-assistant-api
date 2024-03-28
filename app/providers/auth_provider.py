@@ -61,7 +61,8 @@ class SimpleTokenAuthPolicy(AuthPolicy):
         verify_thread_depends = Depends(verify_token_relation(relation_type=RelationType.Thread, name="thread_id"))
         for route in thread.router.routes:
             if route.name == thread.create_thread.__name__:
-                route.dependencies.append(Depends(verfiy_token))
+                route.dependencies.append(Depends(
+                    verify_token_relation(relation_type=RelationType.Thread, name="thread_id", ignore_none_relation_id=True)))
             else:
                 route.dependencies.append(verify_thread_depends)
 

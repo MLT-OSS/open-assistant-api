@@ -30,6 +30,14 @@ class ThreadService:
                     thread_id=thread_id,
                     body=MessageCreate.from_orm(message),
                 )
+        elif body.thread_id:
+            # copy thread
+            from app.services.message.message import MessageService
+
+            MessageService.copy_messages(session=session,
+                                         from_thread_id=body.thread_id,
+                                         to_thread_id=thread_id,
+                                         end_message_id=body.end_message_id)
         session.refresh(db_thread)
         return db_thread
 

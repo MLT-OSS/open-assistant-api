@@ -90,10 +90,17 @@ def get_param(name: str):
     return get_param_from_request
 
 
-def verify_token_relation(relation_type: RelationType, name: str):
+def verify_token_relation(relation_type: RelationType, name: str, ignore_none_relation_id: bool = False):
+    """
+    param relation_type: relation type
+    param name: param name
+    param ignore_none_relation_id: if ignore_none_relation_id is set, return where relation_id is None, use for copy thread api
+    """
     async def verify_authorization(
         session=Depends(get_session), token_id=Depends(get_token_id), relation_id=Depends(get_param(name))
     ):
+        if token_id and ignore_none_relation_id:
+            return
         if token_id and relation_id:
             verify = TokenRelationQuery(token_id=token_id, relation_type=relation_type, relation_id=relation_id)
             if TokenRelationService.verify_relation(session=session, verify=verify):
