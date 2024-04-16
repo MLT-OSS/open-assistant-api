@@ -2,11 +2,6 @@ import time
 
 import openai
 
-from app.api.deps import get_session
-from app.schemas.tool.action import ActionBulkCreateRequest
-from app.schemas.tool.authentication import Authentication, AuthenticationType
-from app.services.tool.action import ActionService
-
 
 def test_run_with_assistant_extra_body():
     client = openai.OpenAI(base_url="http://localhost:8086/api/v1", api_key="xxx")

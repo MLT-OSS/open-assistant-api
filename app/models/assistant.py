@@ -25,5 +25,12 @@ class AssistantCreate(AssistantBase):
     pass
 
 
-class AssistantUpdate(AssistantBase):
-    pass
+class AssistantUpdate(BaseModel):
+    model: str = Field(default=None)
+    description: Optional[str] = Field(default=None)
+    file_ids: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
+    metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    name: Optional[str] = Field(default=None)
+    tools: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    extra_body: Optional[dict] = Field(default=None, sa_column=Column(JSON))

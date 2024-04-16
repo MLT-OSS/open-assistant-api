@@ -1,7 +1,7 @@
 from typing import Type, List
 
 from pydantic import BaseModel, Field
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 
 from app.core.doc_loaders import doc_loader
 from app.core.tools.base_tool import BaseTool

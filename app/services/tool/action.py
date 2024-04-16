@@ -2,8 +2,8 @@ from datetime import datetime
 import copy
 from typing import Dict, List
 
-import orjson
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions.exception import ResourceNotFoundError, ValidateFailedError
 from app.models.action import Action
@@ -32,7 +32,35 @@ from app.services.tool.openapi_utils import (
 
 class ActionService:
     @staticmethod
-    def create_actions(*, session: Session, body: ActionBulkCreateRequest, token_id: str = None) -> List[Action]:
+    async def create_actions(
+        *, session: AsyncSession, body: ActionBulkCreateRequest, token_id: str = None
+    ) -> List[Action]:
+        openapi_schema = replace_openapi_refs(body.openapi_schema)
+        schemas = split_openapi_schema(openapi_schema)
+        if not schemas:
+            raise ValidateFailedError("Failed to parse OpenAPI schema")
+
+        if not body.authentication.is_encrypted():
+            raise Exception("Authentication must be encrypted")
+        actions = []
+        for schema in schemas:
+            action = ActionService.build_action_struct(schema)
+            action.authentication = body.authentication.dict()
+            action.use_for_everyone = body.use_for_everyone
+            actions.append(action)
+            auth_policy.insert_token_rel(
+                session=session, token_id=token_id, relation_type=RelationType.Action, relation_id=str(action.id)
+            )
+        session.add_all(actions)
+        await session.commit()
+        for action in actions:
+            await session.refresh(action)
+        return actions
+
+    @staticmethod
+    def create_actions_sync(
+        *, session: AsyncSession, body: ActionBulkCreateRequest, token_id: str = None
+    ) -> List[Action]:
         openapi_schema = replace_openapi_refs(body.openapi_schema)
         schemas = split_openapi_schema(openapi_schema)
         if not schemas:
@@ -51,14 +79,13 @@ class ActionService:
             )
         session.add_all(actions)
         session.commit()
+        for action in actions:
+            session.refresh(action)
         return actions
 
     @staticmethod
-    def modify_action(*, session: Session, action_id: str, body: ActionUpdateRequest) -> Action:
-        statement = select(Action).where(Action.id == action_id)
-        db_action = session.exec(statement).one_or_none()
-        if db_action is None:
-            raise ResourceNotFoundError(message="action not found")
+    async def modify_action(*, session: AsyncSession, action_id: str, body: ActionUpdateRequest) -> Action:
+        db_action = await ActionService.get_action(session=session, action_id=action_id)
         update_dict = {}
         if body.openapi_schema is not None:
             openapi_schema = replace_openapi_refs(body.openapi_schema)
@@ -84,25 +111,23 @@ class ActionService:
         for key, value in update_dict.items():
             setattr(db_action, key, value)
         session.add(db_action)
-        session.commit()
-        session.refresh(db_action)
+        await session.commit()
+        await session.refresh(db_action)
         return db_action
 
     @staticmethod
-    def delete_action(*, session: Session, action_id: str) -> DeleteResponse:
-        statement = select(Action).where(Action.id == action_id)
-        action = session.exec(statement).one_or_none()
-        if action is None:
-            raise ResourceNotFoundError(message="action not found")
-        session.delete(action)
-        auth_policy.delete_token_rel(session=session, relation_type=RelationType.Action, relation_id=action_id)
-        session.commit()
+    async def delete_action(*, session: AsyncSession, action_id: str) -> DeleteResponse:
+        action = await ActionService.get_action(session=session, action_id=action_id)
+        await session.delete(action)
+        await auth_policy.delete_token_rel(session=session, relation_type=RelationType.Action, relation_id=action_id)
+        await session.commit()
         return DeleteResponse(id=action_id, object="action.deleted", deleted=True)
 
     @staticmethod
-    def get_action(*, session: Session, action_id: str) -> Action:
+    async def get_action(*, session: AsyncSession, action_id: str) -> Action:
         statement = select(Action).where(Action.id == action_id)
-        action = session.exec(statement).one_or_none()
+        result = await session.execute(statement)
+        action = result.scalars().one_or_none()
         if action is None:
             raise ResourceNotFoundError(message="action not found")
         return action
@@ -168,9 +193,9 @@ class ActionService:
         )
 
     @staticmethod
-    def run_action(
+    async def run_action(
         *,
-        session: Session,
+        session: AsyncSession,
         action_id: str,
         parameters: Dict,
         headers: Dict,
@@ -182,7 +207,7 @@ class ActionService:
         :param headers: the headers for the API call
         :return: the response of the API call
         """
-        action: Action = ActionService.get_action(session=session, action_id=action_id)
+        action: Action = await ActionService.get_action(session=session, action_id=action_id)
 
         response = call_action_api(
             url=action.url,

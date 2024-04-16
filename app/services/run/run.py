@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from fastapi import HTTPException
-from sqlmodel import Session, select, desc, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
+from sqlmodel import select, desc, update
 
 from app.exceptions.exception import BadRequestError, ResourceNotFoundError, ValidateFailedError
 from app.models import RunStep
@@ -14,16 +16,16 @@ from app.services.thread.thread import ThreadService
 
 class RunService:
     @staticmethod
-    def create_run(
+    async def create_run(
         *,
-        session: Session,
+        session: AsyncSession,
         thread_id: str,
         body: RunCreate = ...,
     ) -> RunRead:
         # get thread
-        ThreadService.get_thread(session=session, thread_id=thread_id)
+        await ThreadService.get_thread(session=session, thread_id=thread_id)
         # get assistant
-        db_asst = AssistantService.get_assistant(session=session, assistant_id=body.assistant_id)
+        db_asst = await AssistantService.get_assistant(session=session, assistant_id=body.assistant_id)
         if not body.model and db_asst.model:
             body.model = db_asst.model
         if not body.instructions and db_asst.instructions:
@@ -35,40 +37,40 @@ class RunService:
         # create run
         db_run = Run.model_validate(body.model_dump(), update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
         session.add(db_run)
-        session.commit()
-        session.refresh(db_run)
+        await session.commit()
+        await session.refresh(db_run)
         return db_run
 
     @staticmethod
-    def modify_run(
+    async def modify_run(
         *,
-        session: Session,
+        session: AsyncSession,
         thread_id: str,
         run_id: str,
         body: RunUpdate = ...,
     ) -> RunRead:
-        ThreadService.get_thread(session=session, thread_id=thread_id)
-        old_run = RunService.get_run(session=session, run_id=run_id)
+        await ThreadService.get_thread(session=session, thread_id=thread_id)
+        old_run = await RunService.get_run(session=session, run_id=run_id)
         update_data = body.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(old_run, key, value)
         session.add(old_run)
-        session.commit()
-        session.refresh(old_run)
+        await session.commit()
+        await session.refresh(old_run)
         return old_run
 
     @staticmethod
-    def create_thread_and_run(
+    async def create_thread_and_run(
         *,
-        session: Session,
+        session: AsyncSession,
         body: CreateThreadAndRun = ...,
     ) -> RunRead:
         # get assistant
-        db_asst = AssistantService.get_assistant(session=session, assistant_id=body.assistant_id)
+        db_asst = await AssistantService.get_assistant(session=session, assistant_id=body.assistant_id)
         # create thread
         thread_id = None
         if body.thread is not None:
-            db_thread = ThreadService.create_thread(session=session, body=body.thread)
+            db_thread = await ThreadService.create_thread(session=session, body=body.thread)
             thread_id = db_thread.id
         if body.model is None and db_asst.model is not None:
             body.model = db_asst.model
@@ -79,19 +81,19 @@ class RunService:
         # create run
         db_run = Run.model_validate(body, update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
         session.add(db_run)
-        session.commit()
-        session.refresh(db_run)
+        await session.commit()
+        await session.refresh(db_run)
         return db_run
 
     @staticmethod
-    def cancel_run(
+    async def cancel_run(
         *,
-        session: Session,
+        session: AsyncSession,
         thread_id: str,
         run_id: str,
     ) -> RunRead:
-        ThreadService.get_thread(session=session, thread_id=thread_id)
-        db_run = RunService.get_run(session=session, run_id=run_id)
+        await ThreadService.get_thread(session=session, thread_id=thread_id)
+        db_run = await RunService.get_run(session=session, run_id=run_id)
         # 判断任务状态
         if db_run.status == "cancelling":
             raise BadRequestError(message=f"run {run_id} already cancel")
@@ -100,18 +102,18 @@ class RunService:
         db_run.status = "cancelling"
         db_run.cancelled_at = datetime.now()
         session.add(db_run)
-        session.commit()
-        session.refresh(db_run)
+        await session.commit()
+        await session.refresh(db_run)
         return db_run
 
     @staticmethod
-    def submit_tool_outputs_to_run(
-        *, session: Session, thread_id, run_id, body: SubmitToolOutputsRunRequest
+    async def submit_tool_outputs_to_run(
+        *, session: AsyncSession, thread_id, run_id, body: SubmitToolOutputsRunRequest
     ) -> RunRead:
         # get run
-        db_run = RunService.get_run(session=session, run_id=run_id, thread_id=thread_id)
+        db_run = await RunService.get_run(session=session, run_id=run_id, thread_id=thread_id)
         # get run_step
-        db_run_step = RunService.get_in_progress_run_step(run_id=run_id, session=session)
+        db_run_step = await RunService.get_in_progress_run_step(run_id=run_id, session=session)
         if db_run.status != "requires_action":
             raise BadRequestError(message=f'Run status is "${db_run.status}", cannot submit tool outputs')
         # For now, this is always submit_tool_outputs.
@@ -148,8 +150,7 @@ class RunService:
                 .where(RunStep.id == db_run_step.id)
                 .values({"step_details": {"type": "tool_calls", "tool_calls": tool_calls}})
             )
-
-        session.exec(stmt)
+        await session.execute(stmt)
 
         tool_call_ids = [tool_output.tool_call_id for tool_output in body.tool_outputs]
         required_action_tool_calls = db_run.required_action["submit_tool_outputs"]["tool_calls"]
@@ -170,50 +171,69 @@ class RunService:
         else:
             stmt = update(Run).where(Run.id == db_run.id).values({"required_action": required_action})
 
-        session.exec(stmt)
-        session.commit()
-        session.refresh(db_run)
+        await session.execute(stmt)
+        await session.commit()
+        await session.refresh(db_run)
         return db_run
 
     @staticmethod
     def get_in_progress_run_step(*, run_id, session: Session) -> RunStep:
-        run_step = session.exec(
-            select(RunStep)
-            .where(RunStep.run_id == run_id)
-            .where(RunStep.type == "tool_calls")
-            .where(RunStep.status == "in_progress")
-            .order_by(desc(RunStep.created_at))
-        ).one_or_none()
+        run_step = (
+            session.execute(
+                select(RunStep)
+                .where(RunStep.run_id == run_id)
+                .where(RunStep.type == "tool_calls")
+                .where(RunStep.status == "in_progress")
+                .order_by(desc(RunStep.created_at))
+            )
+            .scalars()
+            .one_or_none()
+        )
         if not run_step:
             raise ResourceNotFoundError("run_step not found or not in progress")
         return run_step
 
     @staticmethod
-    def get_run(*, session: Session, run_id, thread_id=None) -> RunRead:
+    async def get_run(*, session: AsyncSession, run_id, thread_id=None) -> RunRead:
         statement = select(Run).where(Run.id == run_id)
         if thread_id is not None:
             statement = statement.where(Run.thread_id == thread_id)
-
-        run = session.exec(statement).one_or_none()
+        result = await session.execute(statement)
+        run = result.scalars().one_or_none()
         if not run:
             raise ResourceNotFoundError(f"run {run_id} not found")
 
         return run
 
     @staticmethod
-    def get_run_step(*, thread_id, run_id, step_id, session: Session) -> RunStep:
-        run_step = session.exec(
+    def get_run_sync(*, session: Session, run_id, thread_id=None) -> RunRead:
+        statement = select(Run).where(Run.id == run_id)
+        if thread_id is not None:
+            statement = statement.where(Run.thread_id == thread_id)
+
+        result = session.execute(statement)
+        run = result.scalars().one_or_none()
+        if not run:
+            raise ResourceNotFoundError(f"run {run_id} not found")
+
+        return run
+
+    @staticmethod
+    async def get_run_step(*, thread_id, run_id, step_id, session: AsyncSession) -> RunStep:
+        statement = (
             select(RunStep)
             .where(RunStep.thread_id == thread_id, RunStep.run_id == run_id, RunStep.id == step_id)
             .order_by(desc(RunStep.created_at))
-        ).one_or_none()
+        )
+        result = await session.execute(statement)
+        run_step = result.scalars().one_or_none()
         if not run_step:
             raise ResourceNotFoundError("run_step not found")
         return run_step
 
     @staticmethod
     def to_queued(*, session: Session, run_id) -> Run:
-        run = RunService.get_run(run_id=run_id, session=session)
+        run = RunService.get_run_sync(run_id=run_id, session=session)
         RunService.check_cancel_and_expire_status(run=run, session=session)
         RunService.check_status_in(run=run, status_list=["requires_action", "in_progress", "queued"])
 
@@ -227,7 +247,7 @@ class RunService:
 
     @staticmethod
     def to_in_progress(*, session: Session, run_id) -> Run:
-        run = RunService.get_run(run_id=run_id, session=session)
+        run = RunService.get_run_sync(run_id=run_id, session=session)
         RunService.check_cancel_and_expire_status(run=run, session=session)
         RunService.check_status_in(run=run, status_list=["queued", "in_progress"])
 
@@ -243,7 +263,7 @@ class RunService:
 
     @staticmethod
     def to_requires_action(*, session: Session, run_id, required_action) -> Run:
-        run = RunService.get_run(run_id=run_id, session=session)
+        run = RunService.get_run_sync(run_id=run_id, session=session)
         RunService.check_cancel_and_expire_status(run=run, session=session)
         RunService.check_status_in(run=run, status_list=["in_progress", "requires_action"])
 
@@ -258,7 +278,7 @@ class RunService:
 
     @staticmethod
     def to_cancelling(*, session: Session, run_id) -> Run:
-        run = RunService.get_run(run_id=run_id, session=session)
+        run = RunService.get_run_sync(run_id=run_id, session=session)
         RunService.check_status_in(run=run, status_list=["in_progress", "cancelling"])
 
         if run.status != "cancelling":
@@ -271,7 +291,7 @@ class RunService:
 
     @staticmethod
     def to_completed(*, session: Session, run_id) -> Run:
-        run = RunService.get_run(run_id=run_id, session=session)
+        run = RunService.get_run_sync(run_id=run_id, session=session)
         RunService.check_cancel_and_expire_status(run=run, session=session)
         RunService.check_status_in(run=run, status_list=["in_progress", "completed"])
 
@@ -286,7 +306,7 @@ class RunService:
 
     @staticmethod
     def to_failed(*, session: Session, run_id, last_error) -> Run:
-        run = RunService.get_run(run_id=run_id, session=session)
+        run = RunService.get_run_sync(run_id=run_id, session=session)
         RunService.check_cancel_and_expire_status(run=run, session=session)
         RunService.check_status_in(run=run, status_list=["in_progress", "failed"])
 

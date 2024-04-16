@@ -24,7 +24,7 @@ class AuthPolicy(object):
         insert a token relation to database when enable token auth policy
         """
 
-    def delete_token_rel(self, session, relation_type: RelationType, relation_id: str):
+    async def delete_token_rel(self, session, relation_type: RelationType, relation_id: str):
         """
         delete token relation when enable token auth policy
         """
@@ -61,8 +61,13 @@ class SimpleTokenAuthPolicy(AuthPolicy):
         verify_thread_depends = Depends(verify_token_relation(relation_type=RelationType.Thread, name="thread_id"))
         for route in thread.router.routes:
             if route.name == thread.create_thread.__name__:
-                route.dependencies.append(Depends(
-                    verify_token_relation(relation_type=RelationType.Thread, name="thread_id", ignore_none_relation_id=True)))
+                route.dependencies.append(
+                    Depends(
+                        verify_token_relation(
+                            relation_type=RelationType.Thread, name="thread_id", ignore_none_relation_id=True
+                        )
+                    )
+                )
             else:
                 route.dependencies.append(verify_thread_depends)
 
@@ -83,10 +88,10 @@ class SimpleTokenAuthPolicy(AuthPolicy):
             relation = TokenRelation(token_id=token_id, relation_type=relation_type, relation_id=str(relation_id))
             session.add(relation)
 
-    def delete_token_rel(self, session, relation_type: RelationType, relation_id: str):
+    async def delete_token_rel(self, session, relation_type: RelationType, relation_id: str):
         to_delete = TokenRelationDelete(relation_type=relation_type, relation_id=relation_id)
-        relation = TokenRelationService.get_relation_to_delete(session=session, delete=to_delete)
-        session.delete(relation)
+        relation = await TokenRelationService.get_relation_to_delete(session=session, delete=to_delete)
+        await session.delete(relation)
 
     def token_filter(self, statement, field, relation_type: RelationType, token_id: str):
         id_subquery = select(TokenRelation.relation_id).where(

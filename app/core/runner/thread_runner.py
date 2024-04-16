@@ -3,11 +3,11 @@ import logging
 from typing import List
 from concurrent.futures import Executor
 
-from config.llm import llm_settings, tool_settings
+from sqlalchemy.orm import Session
+
 from config.config import settings
+from config.llm import llm_settings, tool_settings
 
-
-from app.api.deps import get_session
 from app.core.doc_loaders import doc_loader
 from app.core.runner.context_integration_policy import context_integration_policy
 from app.core.runner.llm_backend import LLMBackend
@@ -42,21 +42,21 @@ class ThreadRunner:
 
     tool_executor: Executor = get_executor_for_config(tool_settings.TOOL_WORKER_NUM, "tool_worker_")
 
-    def __init__(self, run_id: str):
+    def __init__(self, run_id: str, session: Session):
         self.run_id = run_id
-        self.session = next(get_session())
+        self.session = session
         self.max_step = llm_settings.LLM_MAX_STEP
 
     def run(self):
         """
         完成一次 run 的执行，基本步骤
-        1. 初始化，获取 run 以及相关 tools， 构造 system instructions;
-        2. 开始循环，查询已有 run step，进行 chat message 生成;
+        1. 初始化，获取 run 以及相关 tools, 构造 system instructions;
+        2. 开始循环，查询已有 run step, 进行 chat message 生成;
         3. 调用 llm 并解析返回结果;
         4. 根据返回结果，生成新的 run step(tool calls 处理) 或者 message
         """
         # TODO: 重构，将 run 的状态变更逻辑放到 RunService 中
-        run = RunService.get_run(session=self.session, run_id=self.run_id)
+        run = RunService.get_run_sync(session=self.session, run_id=self.run_id)
         run = RunService.to_in_progress(session=self.session, run_id=self.run_id)
         logging.info("processing ThreadRunner task, run_id: %s", self.run_id)
 

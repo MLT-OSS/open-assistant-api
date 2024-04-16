@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     def database_url(self):
         return f"mysql+pymysql://{self.DB_USER}:{urlquote(self.DB_PASSWORD)}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_DATABASE}"
 
+    @property
+    def async_database_url(self):
+        return f"mysql+aiomysql://{self.DB_USER}:{urlquote(self.DB_PASSWORD)}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_DATABASE}"
+
     class Config:
         env_file = ".env"
 
