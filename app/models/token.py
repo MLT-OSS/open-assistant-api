@@ -20,4 +20,4 @@ class TokenCreate(TokenBase):
 
 
 class TokenUpdate(TokenBase):
-    assistant_token: str = Field(nullable=False)
+    pass

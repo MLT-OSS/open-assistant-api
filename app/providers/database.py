@@ -1,9 +1,12 @@
 import logging
 from contextvars import ContextVar
+from typing import Callable
 
 import redis
 from sqlmodel import SQLModel, create_engine
-from sqlalchemy.pool import QueuePool
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.pool import AsyncAdaptedQueuePool, QueuePool
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 from config.config import settings
 from config.database import db_settings, redis_settings
@@ -22,13 +25,30 @@ engine = create_engine(
     pool_recycle=3600,
     echo=settings.DEBUG,
 )
+session = scoped_session(sessionmaker(bind=engine))
+
+async_database_url = db_settings.async_database_url
+async_engine = create_async_engine(
+    async_database_url,
+    connect_args=connect_args,
+    poolclass=AsyncAdaptedQueuePool,
+    pool_size=db_settings.DB_POOL_SIZE,
+    pool_recycle=3600,
+    echo=settings.DEBUG,
+)
+
+# 创建session元类
+async_session_local: Callable[..., AsyncSession] = sessionmaker(
+    class_=AsyncSession,
+    bind=async_engine,
+)
 
 
 def create_db_and_tables():
     logging.debug("Creating database and tables")
     import app.models  # noqa
 
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(async_engine)
     logging.debug("Database and tables created successfully")
 
 

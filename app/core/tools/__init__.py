@@ -1,9 +1,9 @@
 from enum import Enum
 from typing import List
 
+from sqlalchemy.orm import Session
 from sqlmodel import select
 
-from app.api.deps import get_session
 from app.exceptions.exception import ServerError
 from app.models.action import Action
 from app.core.tools.base_tool import BaseTool
@@ -24,9 +24,9 @@ TOOLS = {
 }
 
 
-def find_tools(run, session=next(get_session())) -> List[BaseTool]:
+def find_tools(run, session: Session) -> List[BaseTool]:
     action_ids = [tool.get("id") for tool in run.tools if tool.get("type") == "action"]
-    actions = session.exec(select(Action).where(Action.id.in_(action_ids))).all()
+    actions = session.execute(select(Action).where(Action.id.in_(action_ids))).scalars().all()
     action_map = {action.id: action for action in actions}
 
     tools = []

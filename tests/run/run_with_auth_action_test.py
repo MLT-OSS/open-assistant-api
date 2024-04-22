@@ -3,7 +3,7 @@ import time
 import openai
 import pytest
 
-from app.api.deps import get_session
+from app.providers.database import session
 from app.schemas.tool.action import ActionBulkCreateRequest
 from app.schemas.tool.authentication import Authentication, AuthenticationType
 from app.services.tool.action import ActionService
@@ -78,10 +78,9 @@ def create_workspace_with_authentication():
 
 # 测试带有action的助手,run 的时候传递自己的auth信息
 def test_run_with_action_auth(create_workspace_with_authentication):
-    session = next(get_session())
     body = ActionBulkCreateRequest(**create_workspace_with_authentication)
     body.authentication = Authentication(type=AuthenticationType.none)
-    actions = ActionService.create_actions(session=session, body=body)
+    actions = ActionService.create_actions_sync(session=session, body=body)
     [create_workspace_with_authentication] = actions
 
     client = openai.OpenAI(base_url="http://localhost:8086/api/v1", api_key="xxx")

@@ -3,7 +3,7 @@ import time
 import openai
 import pytest
 
-from app.api.deps import get_session
+from app.providers.database import session
 from app.schemas.tool.action import ActionBulkCreateRequest
 from app.schemas.tool.authentication import Authentication, AuthenticationType
 from app.services.tool.action import ActionService
@@ -187,20 +187,18 @@ def create_workspace_with_authentication():
 def test_assistant_with_action_tools(
     get_weather_data_valid_payload, get_number_fact_valid_payload, create_workspace_with_authentication
 ):
-    # get_weather_data
-    session = next(get_session())
     body = ActionBulkCreateRequest(**get_weather_data_valid_payload)
     body.authentication = Authentication(
         type=AuthenticationType.none,
     )
-    actions = ActionService.create_actions(session=session, body=body)
+    actions = ActionService.create_actions_sync(session=session, body=body)
     [get_weather_data] = actions
     # get_number_fact
     body = ActionBulkCreateRequest(**get_number_fact_valid_payload)
     body.authentication = Authentication(
         type=AuthenticationType.none,
     )
-    actions = ActionService.create_actions(session=session, body=body)
+    actions = ActionService.create_actions_sync(session=session, body=body)
     [get_number_fact] = actions
 
     client = openai.OpenAI(base_url="http://localhost:8086/api/v1", api_key="xxx")

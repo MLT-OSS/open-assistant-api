@@ -13,4 +13,3 @@ def router_init():
     api_router.include_router(files.router, prefix="/files", tags=["files"])
     api_router.include_router(token.router, prefix="/tokens", tags=["tokens"])
     api_router.include_router(action.router, prefix="/actions", tags=["actions"])
-

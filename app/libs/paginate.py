@@ -7,7 +7,8 @@ from fastapi_pagination.cursor import encode_cursor
 from fastapi_pagination.ext.sqlmodel import paginate
 from fastapi_pagination.types import Cursor
 from fastapi_pagination.utils import verify_params, create_pydantic_model
-from sqlmodel import Session, asc, desc
+from sqlmodel import asc, desc
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base_model import BaseModel
 
@@ -56,7 +57,7 @@ class CommonPage(AbstractPage[ModelType], Generic[ModelType]):
         )
 
 
-def cursor_page(query: Any, db: Session) -> CommonPage[ModelType]:
+async def cursor_page(query: Any, db: AsyncSession) -> CommonPage[ModelType]:
     params, _ = verify_params(None, "cursor")
     model = query._propagate_attrs["plugin_subject"].class_
 
@@ -80,4 +81,4 @@ def cursor_page(query: Any, db: Session) -> CommonPage[ModelType]:
     else:
         query = query.order_by(asc(model.__dict__["created_at"]))
 
-    return paginate(db, query)
+    return await paginate(db, query)

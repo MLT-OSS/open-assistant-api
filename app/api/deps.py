@@ -1,19 +1,21 @@
-from sqlmodel import Session
+from typing import AsyncGenerator
 
 from fastapi import Depends, Request
-
 from fastapi.security import APIKeyHeader
-from config.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.exceptions.exception import AuthenticationError, AuthorizationError, ResourceNotFoundError
-from app.providers import database
-from app.models.token_relation import RelationType, TokenRelationQuery
 from app.models.token import Token
-from app.services.token.token_relation import TokenRelationService
+from app.models.token_relation import RelationType, TokenRelationQuery
+from app.providers import database
 from app.services.token.token import TokenService
+from app.services.token.token_relation import TokenRelationService
+from config.config import settings
 
 
-def get_session():
-    with Session(database.engine) as session:
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    """session生成器 作为fast api的Depends选项"""
+    async with database.async_session_local() as session:
         yield session
 
 
@@ -49,13 +51,13 @@ async def verify_admin_token(token=Depends(oauth_token)) -> Token:
         raise AuthorizationError()
 
 
-async def get_token(session=Depends(get_session), token=Depends(oauth_token)) -> Token:
+async def get_token(session=Depends(get_async_session), token=Depends(oauth_token)) -> Token:
     """
     get token info
     """
     if token and token != "":
         try:
-            return TokenService.get_token(session=session, token=token)
+            return await TokenService.get_token(session=session, token=token)
         except ResourceNotFoundError:
             pass
     return None
@@ -90,13 +92,21 @@ def get_param(name: str):
     return get_param_from_request
 
 
-def verify_token_relation(relation_type: RelationType, name: str):
+def verify_token_relation(relation_type: RelationType, name: str, ignore_none_relation_id: bool = False):
+    """
+    param relation_type: relation type
+    param name: param name
+    param ignore_none_relation_id: if ignore_none_relation_id is set, return where relation_id is None, use for copy thread api
+    """
+
     async def verify_authorization(
-        session=Depends(get_session), token_id=Depends(get_token_id), relation_id=Depends(get_param(name))
+        session=Depends(get_async_session), token_id=Depends(get_token_id), relation_id=Depends(get_param(name))
     ):
+        if token_id and ignore_none_relation_id:
+            return
         if token_id and relation_id:
             verify = TokenRelationQuery(token_id=token_id, relation_type=relation_type, relation_id=relation_id)
-            if TokenRelationService.verify_relation(session=session, verify=verify):
+            if await TokenRelationService.verify_relation(session=session, verify=verify):
                 return
         raise AuthorizationError()
 
