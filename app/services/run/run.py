@@ -11,6 +11,7 @@ from app.models.run import Run, RunRead, RunCreate, RunUpdate
 from app.schemas.runs import SubmitToolOutputsRunRequest
 from app.schemas.threads import CreateThreadAndRun
 from app.services.assistant.assistant import AssistantService
+from app.services.message.message import MessageService
 from app.services.thread.thread import ThreadService
 
 
@@ -34,9 +35,24 @@ class RunService:
             body.tools = db_asst.tools
         if not body.extra_body and db_asst.extra_body:
             body.extra_body = db_asst.extra_body
+        if not body.temperature and db_asst.temperature:
+            body.temperature = db_asst.temperature
+        if not body.top_p and db_asst.top_p:
+            body.top_p = db_asst.top_p
         # create run
         db_run = Run.model_validate(body.model_dump(), update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
         session.add(db_run)
+        session.refresh(db_run)
+        run_id = db_run.id
+        if body.additional_messages:
+            # create messages
+            await MessageService.create_messages(
+                session=session,
+                thread_id=thread_id,
+                run_id=str(run_id),
+                assistant_id=body.assistant_id,
+                messages=body.additional_messages,
+            )
         await session.commit()
         await session.refresh(db_run)
         return db_run
