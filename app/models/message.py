@@ -27,4 +27,5 @@ class MessageCreate(BaseModel):
 class MessageUpdate(BaseModel):
     # thread_id: str
     # assistant_id: Optional[str]
+    content: Optional[str]
     metadata_: Optional[dict]

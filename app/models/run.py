@@ -48,8 +48,7 @@ class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
     extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
 
 
-class RunRead(Run):
-    pass
+class RunRead(Run): ...
 
 
 class RunCreate(BaseModel):
@@ -62,6 +61,7 @@ class RunCreate(BaseModel):
     metadata_: Optional[dict] = Field(default={}, alias="metadata")
     tools: Optional[list] = []
     extra_body: Optional[dict[str, Union[dict[str, Union[Authentication, Any]], Any]]] = {}
+    stream: Optional[bool] = False
 
     @root_validator()
     def root_validator(cls, data: Any):

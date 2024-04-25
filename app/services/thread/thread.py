@@ -1,5 +1,6 @@
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.exceptions.exception import ResourceNotFoundError, BadRequestError
 from app.models.message import MessageCreate
@@ -68,6 +69,15 @@ class ThreadService:
     async def get_thread(*, session: AsyncSession, thread_id: str) -> Thread:
         statement = select(Thread).where(Thread.id == thread_id)
         result = await session.execute(statement)
+        thread = result.scalars().one_or_none()
+        if thread is None:
+            raise ResourceNotFoundError(message=f"thread {thread_id} not found")
+        return thread
+
+    @staticmethod
+    def get_thread_sync(*, session: Session, thread_id: str) -> Thread:
+        statement = select(Thread).where(Thread.id == thread_id)
+        result = session.execute(statement)
         thread = result.scalars().one_or_none()
         if thread is None:
             raise ResourceNotFoundError(message=f"thread {thread_id} not found")

@@ -46,7 +46,34 @@ class MessageService:
         return db_message
 
     @staticmethod
+    def get_message_sync(*, session: Session, thread_id: str, message_id: str) -> Message:
+        statement = select(Message).where(Message.thread_id == thread_id).where(Message.id == message_id)
+        result = session.execute(statement)
+        message = result.scalars().one_or_none()
+        if message is None:
+            raise HTTPException(status_code=404, detail="Message not found")
+        return message
+
+    @staticmethod
+    def modify_message_sync(*, session: Session, thread_id: str, message_id: str, body: MessageUpdate) -> Message:
+        if body.content:
+            body.content = [{"type": "text", "text": {"value": body.content, "annotations": []}}]
+        # get thread
+        ThreadService.get_thread_sync(thread_id=thread_id, session=session)
+        # get message
+        db_message = MessageService.get_message_sync(session=session, thread_id=thread_id, message_id=message_id)
+        update_data = body.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_message, key, value)
+        session.add(db_message)
+        session.commit()
+        session.refresh(db_message)
+        return db_message
+
+    @staticmethod
     async def modify_message(*, session: AsyncSession, thread_id: str, message_id: str, body: MessageUpdate) -> Message:
+        if body.content:
+            body.content = [{"type": "text", "text": {"value": body.content, "annotations": []}}]
         # get thread
         await ThreadService.get_thread(thread_id=thread_id, session=session)
         # get message
