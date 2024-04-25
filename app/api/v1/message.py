@@ -1,4 +1,6 @@
+from typing import Optional
 from fastapi import APIRouter, Depends
+from fastapi.params import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -19,11 +21,16 @@ async def list_messages(
     *,
     session: AsyncSession = Depends(get_async_session),
     thread_id: str,
+    run_id: Optional[str] = Query(None, description="Filter messages by the run ID that generated them."),
 ):
     """
     Returns a list of messages for a given thread.
     """
-    return await cursor_page(select(Message).where(Message.thread_id == thread_id), session)
+    statement = select(Message).where(Message.thread_id == thread_id)
+    if run_id:
+        # 根据 run_id 进行过滤
+        statement = statement.where(Message.run_id == run_id)
+    return await cursor_page(statement, session)
 
 
 @router.post("/{thread_id}/messages", response_model=Message)
