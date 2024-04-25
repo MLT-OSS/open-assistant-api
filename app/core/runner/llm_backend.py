@@ -16,7 +16,15 @@ class LLMBackend:
         self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
 
     def run(
-        self, messages: List, model: str, tools: List = None, tool_choice="auto", stream=False, extra_body=None
+        self,
+        messages: List,
+        model: str,
+        tools: List = None,
+        tool_choice="auto",
+        stream=False,
+        extra_body=None,
+        temperature=None,
+        top_p=None,
     ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         chat_params = {
             "messages": messages,
@@ -29,6 +37,10 @@ class LLMBackend:
                 if "n" in model_params:
                     raise ValueError("n is not allowed in model_params")
                 chat_params.update(model_params)
+        if temperature:
+            chat_params["temperature"] = temperature
+        if top_p:
+            chat_params["top_p"] = top_p
         if tools:
             chat_params["tools"] = tools
             chat_params["tool_choice"] = tool_choice if tool_choice else "auto"

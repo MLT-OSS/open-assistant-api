@@ -115,6 +115,8 @@ class ThreadRunner:
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
             stream=True,
             extra_body=run.extra_body,
+            temperature=run.temperature,
+            top_p=run.top_p,
         )
 
         # create message callback

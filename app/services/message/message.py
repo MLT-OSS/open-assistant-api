@@ -124,3 +124,25 @@ class MessageService:
             )
             session.add(new_message)
         await session.commit()
+
+    @staticmethod
+    async def create_messages(*, session: AsyncSession, thread_id: str, run_id: str, assistant_id: str, messages: list):
+        for original_message in messages:
+            content = [
+                {
+                    "type": "text",
+                    "text": {"value": original_message["content"], "annotations": []},
+                }
+            ]
+
+            new_message = Message.model_validate(
+                original_message,
+                update={
+                    "thread_id": thread_id,
+                    "run_id": run_id,
+                    "assistant_id": assistant_id,
+                    "content": content,
+                    "role": original_message["role"],
+                },
+            )
+            session.add(new_message)
