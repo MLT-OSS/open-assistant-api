@@ -1,3 +1,4 @@
+from functools import partial
 import logging
 
 from typing import List
@@ -12,6 +13,7 @@ from app.core.doc_loaders import doc_loader
 from app.core.runner.context_integration_policy import context_integration_policy
 from app.core.runner.llm_backend import LLMBackend
 from app.core.runner.llm_callback_handler import LLMCallbackHandler
+from app.core.runner.pub_handler import StreamEventHandler
 from app.core.runner.utils import message_util as msg_util
 from app.core.runner.utils.tool_call_util import (
     tool_call_recognize,
@@ -22,7 +24,7 @@ from app.core.runner.utils.tool_call_util import (
 )
 from app.core.tools import find_tools, BaseTool
 from app.libs.thread_executor import get_executor_for_config, run_with_executor
-from app.models.message import Message
+from app.models.message import Message, MessageUpdate
 from app.models.run import Run
 from app.models.run_step import RunStep
 from app.models.file import File
@@ -42,10 +44,12 @@ class ThreadRunner:
 
     tool_executor: Executor = get_executor_for_config(tool_settings.TOOL_WORKER_NUM, "tool_worker_")
 
-    def __init__(self, run_id: str, session: Session):
+    def __init__(self, run_id: str, session: Session, stream: bool = False):
         self.run_id = run_id
         self.session = session
+        self.stream = stream
         self.max_step = llm_settings.LLM_MAX_STEP
+        self.event_handler: StreamEventHandler = None
 
     def run(self):
         """
@@ -57,7 +61,10 @@ class ThreadRunner:
         """
         # TODO: 重构，将 run 的状态变更逻辑放到 RunService 中
         run = RunService.get_run_sync(session=self.session, run_id=self.run_id)
+        self.event_handler = StreamEventHandler(run_id=self.run_id, is_stream=self.stream)
+
         run = RunService.to_in_progress(session=self.session, run_id=self.run_id)
+        self.event_handler.pub_run_in_progress(run)
         logging.info("processing ThreadRunner task, run_id: %s", self.run_id)
 
         llm = self.__init_llm_backend(run.assistant_id)
@@ -78,6 +85,7 @@ class ThreadRunner:
                 session=self.session, run_id=self.run_id, thread_id=run.thread_id
             )
             loop = self.__run_step(llm, run, run_steps, instruction, tools)
+        self.event_handler.pub_done()
 
     def __run_step(self, llm: LLMBackend, run: Run, run_steps: List[RunStep], instruction: str, tools: List[BaseTool]):
         """
@@ -109,22 +117,35 @@ class ThreadRunner:
             extra_body=run.extra_body,
         )
 
-        # create message creation run step callback
-        def _create_message_creation_run_step():
+        # create message callback
+        create_message_callback = partial(
+            MessageService.new_message,
+            session=self.session,
+            assistant_id=run.assistant_id,
+            thread_id=run.thread_id,
+            run_id=run.id,
+            role="assistant",
+        )
+
+        # create 'message creation' run step callback
+        def _create_message_creation_run_step(message_id):
             return RunStepService.new_run_step(
                 session=self.session,
                 type="message_creation",
                 assistant_id=run.assistant_id,
                 thread_id=run.thread_id,
                 run_id=run.id,
-                step_details={"type": "message_creation"},
+                step_details={"type": "message_creation", "message_creation": {"message_id": message_id}},
             )
 
         llm_callback_handler = LLMCallbackHandler(
-            run_id=run.id, on_final_message_start_func=_create_message_creation_run_step
+            run_id=run.id,
+            on_step_create_func=_create_message_creation_run_step,
+            on_message_create_func=create_message_callback,
+            event_handler=self.event_handler,
         )
         response_msg = llm_callback_handler.handle_llm_response(response_stream)
-        message_creation_run_step = llm_callback_handler.on_final_message_start_func_output
+        message_creation_run_step = llm_callback_handler.step
         logging.info("chat_response_message: %s", response_msg)
 
         if msg_util.is_tool_call(response_msg):
@@ -140,6 +161,8 @@ class ThreadRunner:
                 run_id=run.id,
                 step_details={"type": "tool_calls", "tool_calls": [tool_call_dict for _, tool_call_dict in tool_calls]},
             )
+            self.event_handler.pub_run_step_created(new_run_step)
+            self.event_handler.pub_run_step_in_progress(new_run_step)
 
             internal_tool_calls = list(filter(lambda _tool_calls: _tool_calls[0] is not None, tool_calls))
             external_tool_call_dict = [tool_call_dict for tool, tool_call_dict in tool_calls if tool is None]
@@ -153,7 +176,7 @@ class ThreadRunner:
                         tasks=internal_tool_calls,
                         timeout=tool_settings.TOOL_WORKER_EXECUTION_TIMEOUT,
                     )
-                    RunStepService.update_step_details(
+                    new_run_step = RunStepService.update_step_details(
                         session=self.session,
                         run_step_id=new_run_step.id,
                         step_details={"type": "tool_calls", "tool_calls": tool_calls_with_outputs},
@@ -165,7 +188,7 @@ class ThreadRunner:
 
             if external_tool_call_dict:
                 # run 设置为 action required，等待业务完成更新并再次拉起
-                RunService.to_requires_action(
+                run = RunService.to_requires_action(
                     session=self.session,
                     run_id=run.id,
                     required_action={
@@ -173,28 +196,34 @@ class ThreadRunner:
                         "submit_tool_outputs": {"tool_calls": external_tool_call_dict},
                     },
                 )
+                self.event_handler.pub_run_step_delta(
+                    step_id=new_run_step.id, step_details={"type": "tool_calls", "tool_calls": external_tool_call_dict}
+                )
+                self.event_handler.pub_run_requires_action(run)
             else:
+                self.event_handler.pub_run_step_completed(new_run_step)
                 return True
         else:
-            # 无 tool call 信息，创建 message，结束任务
-            new_message = MessageService.new_message(
+            # 无 tool call 信息，message 生成结束，更新状态
+            new_message = MessageService.modify_message_sync(
                 session=self.session,
-                role=response_msg.role,
-                content=response_msg.content,
-                assistant_id=run.assistant_id,
                 thread_id=run.thread_id,
-                run_id=run.id,
+                message_id=llm_callback_handler.message.id,
+                body=MessageUpdate(content=response_msg.content),
             )
+            self.event_handler.pub_message_completed(new_message)
 
-            RunStepService.update_step_details(
+            new_step = RunStepService.update_step_details(
                 session=self.session,
                 run_step_id=message_creation_run_step.id,
                 step_details={"type": "message_creation", "message_creation": {"message_id": new_message.id}},
                 completed=True,
             )
             RunService.to_completed(session=self.session, run_id=run.id)
+            self.event_handler.pub_run_step_completed(new_step)
 
         # 任务结束
+        self.event_handler.pub_run_completed(run)
         return False
 
     def __init_llm_backend(self, assistant_id):

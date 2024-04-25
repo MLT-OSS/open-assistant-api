@@ -20,3 +20,4 @@ class SubmitToolOutputsRunRequest(BaseModel):
     tool_outputs: List[ToolOutput] = Field(
         ..., description="A list of tools for which the outputs are being submitted."
     )
+    stream: Optional[bool] = False
