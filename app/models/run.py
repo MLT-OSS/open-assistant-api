@@ -51,8 +51,8 @@ class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
     max_prompt_tokens: Optional[int] = Field(default=None)  # 最大提示长度
     response_format: Optional[str] = Field(default=None)  # 返回格式
     tool_choice: Optional[str] = Field(default=None)  # 工具选择
-    truncation_strategy: Optional[dict] = Field(default={}, sa_column=Column(JSON))  # 截断策略
-    usage: Optional[dict] = Field(default={}, sa_column=Column(JSON))  # 调用使用情况
+    truncation_strategy: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 截断策略
+    usage: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 调用使用情况
     temperature: Optional[float] = Field(default=None)  # 温度
     top_p: Optional[float] = Field(default=None)  # top_p
 
@@ -74,7 +74,7 @@ class RunCreate(BaseModel):
     additional_messages: Optional[list] = Field(default=[], sa_column=Column(JSON))  # 消息列表
     max_completion_tokens: Optional[int] = None  # 最大完成长度
     max_prompt_tokens: Optional[int] = Field(default=None)  # 最大提示长度
-    truncation_strategy: Optional[dict] = Field(default={}, sa_column=Column(JSON))  # 截断策略
+    truncation_strategy: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 截断策略
     response_format: Optional[str] = Field(default=None)  # 返回格式
     tool_choice: Optional[str] = Field(default=None)  # 工具选择
     temperature: Optional[float] = Field(default=None)  # 温度
