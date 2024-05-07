@@ -193,20 +193,19 @@ class RunService:
         return db_run
 
     @staticmethod
-    def get_in_progress_run_step(*, run_id, session: Session) -> RunStep:
-        run_step = (
-            session.execute(
-                select(RunStep)
-                .where(RunStep.run_id == run_id)
-                .where(RunStep.type == "tool_calls")
-                .where(RunStep.status == "in_progress")
-                .order_by(desc(RunStep.created_at))
-            )
-            .scalars()
-            .one_or_none()
+    async def get_in_progress_run_step(*, run_id: str, session: AsyncSession):
+        result = await session.execute(
+            select(RunStep)
+            .where(RunStep.run_id == run_id)
+            .where(RunStep.type == "tool_calls")
+            .where(RunStep.status == "in_progress")
+            .order_by(desc(RunStep.created_at))
         )
+        run_step = result.scalars().one_or_none()
+
         if not run_step:
             raise ResourceNotFoundError("run_step not found or not in progress")
+
         return run_step
 
     @staticmethod
