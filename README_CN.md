@@ -48,7 +48,7 @@ assistant = client.beta.assistants.create(
 | 内置 Tool          | 支持扩展               | 不支持扩展                |
 | Code Interpreter | 待开发                | 支持                   |
 | LLM 支持           | 支持更多的 LLM          | 仅 GPT                |
-| Message 流式输出     | 支持                 | 不支持                  |
+| Message 流式输出     | 支持                 | 支持                  |
 | 本地部署             | 支持                 | 不支持                  |
 
 - **LLM 支持**: 相较于 OpenAI 官方版本，可以通过接入 One API 来支持更多的模型。
