@@ -49,7 +49,7 @@ assistant = client.beta.assistants.create(
 | Built-in Tool            | Extendable            | Not Extendable       |
 | Code Interpreter         | Under Development     | Supported            |
 | LLM Support              | Supports More LLMs    | Only GPT             |
-| Message Streaming Output | Supports              | Not Supported        |
+| Message Streaming Output | Supports              | Supported        |
 | Local Deployment         | Supported             | Not Supported        |
 
 - **LLM Support**: Compared to the official OpenAI version, more models can be supported by integrating with One API.
