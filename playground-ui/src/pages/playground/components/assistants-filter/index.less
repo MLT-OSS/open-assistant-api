@@ -1,0 +1,28 @@
+.thread-messages {
+    align-items: center;
+    display: flex;
+    flex: 1 1;
+    flex-direction: column;
+    overflow: auto;
+    padding: 6px 24px 20px;
+
+    :global {
+        .thread-detail {
+            max-width: 900px;
+            padding: 0 24px;
+            width: 100%;
+        }
+
+        .thread-item {
+            font-size: 16px;
+            line-height: 16px;
+            padding: 12px 0;
+        }
+
+        .thread-content {
+            padding-top: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    }
+}

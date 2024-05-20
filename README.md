@@ -49,7 +49,7 @@ assistant = client.beta.assistants.create(
 | Built-in Tool            | Extendable            | Not Extendable       |
 | Code Interpreter         | Under Development     | Supported            |
 | LLM Support              | Supports More LLMs    | Only GPT             |
-| Message Streaming Output | Supports              | Not Supported        |
+| Message Streaming Output | Supports              | Supported        |
 | Local Deployment         | Supported             | Not Supported        |
 
 - **LLM Support**: Compared to the official OpenAI version, more models can be supported by integrating with One API.
@@ -101,6 +101,23 @@ Before running, you need to run `pip install openai` to install the Python `open
 python tests/e2e/index.py
 ```
 
+### Permissions
+Simple user isolation is provided based on tokens to meet SaaS deployment requirements. It can be enabled by configuring `APP_AUTH_ENABLE`.
+
+![](docs/imgs/user.png)
+
+1. The authentication method is Bearer token. You can include `Authorization: Bearer ***` in the header for authentication.
+2. Token management is described in the token section of the API documentation. Relevant APIs need to be authenticated with an admin token, which is configured as `APP_AUTH_ADMIN_TOKEN` and defaults to "admin".
+3. When creating a token, you need to provide the base URL and API key of the large model. The created assistant will use the corresponding configuration to access the large model.
+
+### Tools
+According to the OpenAPI/Swagger specification, it allows the integration of various tools into the assistant, empowering and enhancing its capability to connect with the external world.
+
+1. Facilitates connecting your application with other systems or services, enabling interaction with the external environment, such as code execution or accessing proprietary information sources.
+2. During usage, you need to create tools first, and then you can integrate them with the assistant. Refer to the test cases for more details.[Assistant With Action](tests/tools/assistant_action_test.py)
+3. If you need to use tools with authentication information, simply add the authentication information at runtime. The specific parameter format can be found in the API documentation. Refer to the test cases for more details. [Run With Auth Action](tests/tools/run_with_auth_action_test.py)
+
+
 ## Community and Support
 
 - Join the [Slack](https://join.slack.com/t/openassistant-qbu7007/shared_invite/zt-29t8j9y12-9og5KZL6GagXTEvbEDf6UQ)
@@ -120,6 +137,7 @@ We mainly referred to and relied on the following projects:
 - [OpenAI API](https://github.com/openai/openai-openapi): OpenAI interface definition
 - [LangChain](https://github.com/langchain-ai/langchain): LLM application development library
 - [OpenGPTs](https://github.com/langchain-ai/opengpts): LangChain GPTs
+- [TaskingAI](https://github.com/TaskingAI/TaskingAI): TaskingAI Client SDK
 
 ## Contributing
 

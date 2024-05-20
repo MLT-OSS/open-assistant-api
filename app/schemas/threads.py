@@ -12,3 +12,4 @@ class CreateThreadAndRun(BaseModel):
     model: Optional[str] = None
     metadata_: Optional[dict] = {}
     tools: Optional[list] = Field(default=[])
+    stream: Optional[bool] = False

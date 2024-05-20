@@ -48,7 +48,7 @@ assistant = client.beta.assistants.create(
 | 内置 Tool          | 支持扩展               | 不支持扩展                |
 | Code Interpreter | 待开发                | 支持                   |
 | LLM 支持           | 支持更多的 LLM          | 仅 GPT                |
-| Message 流式输出     | 支持                 | 不支持                  |
+| Message 流式输出     | 支持                 | 支持                  |
 | 本地部署             | 支持                 | 不支持                  |
 
 - **LLM 支持**: 相较于 OpenAI 官方版本，可以通过接入 One API 来支持更多的模型。
@@ -97,6 +97,22 @@ Api Base URL: http://127.0.0.1:8086/api/v1
 python tests/e2e/index.py
 ```
 
+### 权限
+基于 token 提供简单用户隔离，满足 SaaS 部署需求，可通过配置 ```APP_AUTH_ENABLE``` 开启
+
+![](docs/imgs/user.png)
+
+1. 验证方式为 Bearer token，可在 Header 中填入 ```Authorization: Bearer ***``` 进行验证
+2. token 管理参考 api 文档中的 token 小节  
+相关 api 需通过 admin token 验证，配置为 ```APP_AUTH_ADMIN_TOKEN```，默认为 admin
+3. 创建 token 需填入大模型 base_url 和 api_key，创建的 assistant 将使用相关配置访问大模型
+### 工具
+根据 OpenAPI /Swagger规范，允许将多种工具集成到助手中，赋予并增强了LLM 连接外部世界的能力。
+
+1. 方便将你的应用与其他系统或服务连接，与外部环境交互，如代码执行、对专属信息源的访问
+2. 在使用过程中，需创建工具，接着将工具与助手搭配即可，查看测试用例[Assistant With Action](tests/tools/assistant_action_test.py)
+2. 若需要使用带认证信息的工具，只需在运行时添加认证信息即可，具体参数格式可在接口文档中查看。查看测试用例[Run With Auth Action](tests/tools/run_with_auth_action_test.py)
+
 ## 社区与支持
 
 - 加入 [Slack](https://join.slack.com/t/openassistant-qbu7007/shared_invite/zt-29t8j9y12-9og5KZL6GagXTEvbEDf6UQ)
@@ -116,6 +132,8 @@ python tests/e2e/index.py
 - [OpenAI API](https://github.com/openai/openai-openapi): OpenAI 接口定义
 - [LangChain](https://github.com/langchain-ai/langchain): LLM 应用开发库
 - [OpenGPTs](https://github.com/langchain-ai/opengpts): LangChain GPTs
+- [TaskingAI](https://github.com/TaskingAI/TaskingAI): TaskingAI 原生应用开发
+
 
 ## 参与贡献
 

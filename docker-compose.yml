@@ -19,6 +19,9 @@ services:
       APP_SERVER_WORKERS: 20
       APP_API_PREFIX: /api
 
+      APP_AUTH_ENABLE: false
+      APP_AUTH_ADMIN_TOKEN: admin
+
       LOG_LEVEL: DEBUG
 
       # celery
@@ -50,11 +53,13 @@ services:
       S3_SECRET_KEY: minioadmin
       S3_REGION: us-east-1
 
+      # secret
+      APP_AES_ENCRYPTION_KEY: 7700b2f9c8dd982dfaddf8b47a92f1d900507ee8ac335f96a64e9ca0f018b195
+
     depends_on:
       - db
       - redis
       - minio
-
 
   worker:
     image: samepaage/open-assistant-api:main
@@ -67,6 +72,9 @@ services:
       MODE: worker
       APP_DEBUG: true
       APP_ENV: prod
+
+      APP_AUTH_ENABLE: false
+      APP_AUTH_ADMIN_TOKEN: admin
 
       LOG_LEVEL: DEBUG
 
@@ -112,15 +120,17 @@ services:
       BING_SUBSCRIPTION_KEY:
       WEB_SEARCH_NUM_RESULTS: 5
 
+      # secret
+      APP_AES_ENCRYPTION_KEY: 7700b2f9c8dd982dfaddf8b47a92f1d900507ee8ac335f96a64e9ca0f018b195
+
     depends_on:
       - db
       - redis
       - minio
 
-
   db:
     image: mysql:5.7.44
-    # platform: linux/x86_64
+    platform: linux/x86_64
     restart: always
     volumes:
       - ./volumes/mysql/data:/var/lib/mysql
@@ -132,16 +142,20 @@ services:
       MYSQL_PASSWORD: '123456'
       MYSQL_DATABASE: open_assistant
       # TZ: Asia/Shanghai
-    command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
+    command:
+      [
+        'mysqld',
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci'
+      ]
     healthcheck:
-      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 20s
       retries: 10
 
-
   redis:
     image: redis:6-alpine
-    # platform: linux/x86_64
+    platform: linux/x86_64
     restart: always
     volumes:
       - ./volumes/redis/data:/data
@@ -149,12 +163,11 @@ services:
       - '6379:6379'
     command: redis-server --requirepass 123456
     healthcheck:
-      test: [ "CMD", "redis-cli","ping" ]
-
+      test: [ "CMD", "redis-cli", "ping" ]
 
   minio:
     image: minio/minio:RELEASE.2023-03-20T20-16-18Z
-    # platform: linux/x86_64
+    platform: linux/x86_64
     restart: always
     volumes:
       - ./volumes/minio/data:/minio_data
@@ -166,15 +179,20 @@ services:
       MINIO_SECRET_KEY: minioadmin
     command: minio server /minio_data --console-address ':9001'
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:9000/minio/health/live"
+        ]
       interval: 30s
       timeout: 20s
       retries: 3
 
-
   create-buckets:
     image: minio/mc
-    # platform: linux/x86_64
+    platform: linux/x86_64
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -187,3 +205,12 @@ services:
       /usr/bin/mc mb -p minio/$${BUCKET_NAME};
       exit 0;
       "
+
+  playground-ui:
+    build: 
+      context: playground-ui
+      dockerfile: Dockerfile
+    ports: 
+      - "80:80"
+    depends_on:
+      - api 

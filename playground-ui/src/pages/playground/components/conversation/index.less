@@ -1,0 +1,86 @@
+.conversation {
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    :global {
+        .ml-8 {
+            margin-left: 8px;
+        }
+
+        .mr-8 {
+            margin-right: 8px;
+        }
+
+        .assistants-pg-header {
+            text-wrap: nowrap;
+            align-items: center;
+            display: flex;
+            flex-flow: row;
+            font-size: 12px;
+            justify-content: space-between;
+            margin: 0 24px;
+            padding: 14px 0 16px;
+        }
+
+        .playground-drop-target {
+            display: flex;
+            flex-direction: column;
+            height: calc(100% - 62px);
+            width: 100%;
+        }
+
+        .thread-messages {
+            align-items: center;
+            display: flex;
+            flex: 1 1;
+            flex-direction: column;
+            overflow: auto;
+            padding: 6px 24px 20px;
+        }
+
+        .add-message-wrapper {
+            margin: 0 auto;
+            max-width: 948px;
+            padding: 0 24px 12px;
+            width: 100%;
+        }
+
+        .user-input {
+            border: 1px solid #d3d3d3;
+            border-radius: 12px;
+            box-sizing: border-box;
+            padding: 24px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .input-button-group {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .run {
+            background: #10a37f;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .add-instruction {
+            background: #10a37f;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .add-popover-des {
+            color: #6e6e80;
+        }
+
+        .upload-list{
+            width: 50%;
+            padding-bottom: 6px;
+            margin-top: -24px;
+        }
+    }
+}

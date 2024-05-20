@@ -16,6 +16,8 @@ class ThreadCreate(BaseModel):
     object: str = "thread"
     messages: Optional[list[MessageCreate]]
     # metadata: Optional[dict]
+    thread_id: Optional[str]
+    end_message_id: Optional[str]
 
 
 class ThreadUpdate(BaseModel):

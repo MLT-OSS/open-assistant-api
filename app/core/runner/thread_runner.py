@@ -1,13 +1,20 @@
+from functools import partial
 import logging
 
 from typing import List
 from concurrent.futures import Executor
 
-from app.core.runner.llm_callback_handler import LLMCallbackHandler
+from sqlalchemy.orm import Session
+
+from config.config import settings
 from config.llm import llm_settings, tool_settings
 
-from app.api.deps import get_session
-import app.core.runner.utils.message_util as msg_util
+from app.core.doc_loaders import doc_loader
+from app.core.runner.llm_backend import LLMBackend
+from app.core.runner.llm_callback_handler import LLMCallbackHandler
+from app.core.runner.memory import Memory, find_memory
+from app.core.runner.pub_handler import StreamEventHandler
+from app.core.runner.utils import message_util as msg_util
 from app.core.runner.utils.tool_call_util import (
     tool_call_recognize,
     internal_tool_call_invoke,
@@ -15,16 +22,20 @@ from app.core.runner.utils.tool_call_util import (
     tool_call_id,
     tool_call_output,
 )
-from app.core.runner.llm_backend import LLMBackend
-from app.core.runner.context_integration_policy import context_integration_policy
-from app.core.tools import tool_find, BaseTool
+from app.core.tools import find_tools, BaseTool
 from app.libs.thread_executor import get_executor_for_config, run_with_executor
-from app.models.run_step import RunStep
+from app.models.message import Message, MessageUpdate
 from app.models.run import Run
-from app.models.message import Message
+from app.models.run_step import RunStep
+from app.models.file import File
+from app.providers.storage import storage
+from app.services.assistant.assistant import AssistantService
+from app.services.file.file import FileService
 from app.services.message.message import MessageService
 from app.services.run.run import RunService
 from app.services.run.run_step import RunStepService
+from app.services.token.token import TokenService
+from app.services.token.token_relation import TokenRelationService
 
 
 class ThreadRunner:
@@ -34,26 +45,32 @@ class ThreadRunner:
 
     tool_executor: Executor = get_executor_for_config(tool_settings.TOOL_WORKER_NUM, "tool_worker_")
 
-    def __init__(self, run_id: str):
+    def __init__(self, run_id: str, session: Session, stream: bool = False):
         self.run_id = run_id
-        self.session = next(get_session())
-        self.llm = LLMBackend(llm_settings=llm_settings)
+        self.session = session
+        self.stream = stream
         self.max_step = llm_settings.LLM_MAX_STEP
+        self.event_handler: StreamEventHandler = None
 
     def run(self):
         """
         完成一次 run 的执行，基本步骤
-        1. 初始化，获取 run 以及相关 tools， 构造 system instructions;
-        2. 开始循环，查询已有 run step，进行 chat message 生成;
+        1. 初始化，获取 run 以及相关 tools, 构造 system instructions;
+        2. 开始循环，查询已有 run step, 进行 chat message 生成;
         3. 调用 llm 并解析返回结果;
         4. 根据返回结果，生成新的 run step(tool calls 处理) 或者 message
         """
         # TODO: 重构，将 run 的状态变更逻辑放到 RunService 中
-        run = RunService.get_run(session=self.session, run_id=self.run_id)
+        run = RunService.get_run_sync(session=self.session, run_id=self.run_id)
+        self.event_handler = StreamEventHandler(run_id=self.run_id, is_stream=self.stream)
+
         run = RunService.to_in_progress(session=self.session, run_id=self.run_id)
+        self.event_handler.pub_run_in_progress(run)
         logging.info("processing ThreadRunner task, run_id: %s", self.run_id)
 
-        tools = [tool_find(tool, lambda tool: tool["type"]) for tool in run.tools]
+        llm = self.__init_llm_backend(run.assistant_id)
+
+        tools = find_tools(run, self.session)
 
         instructions = [run.instructions]
         for tool in tools:
@@ -63,14 +80,29 @@ class ThreadRunner:
                 instructions += [instruction_supplement]
         instruction = "\n".join(instructions)
 
+        # get memory from assistant metadata
+        # format likes {"memory": {"type": "window", "window_size": 20, "max_token_size": 4000}}
+        ast = AssistantService.get_assistant_sync(session=self.session, assistant_id=run.assistant_id)
+        metadata = ast.metadata_ or {}
+        memory = find_memory(metadata.get("memory", {}))
+
         loop = True
         while loop:
             run_steps = RunStepService.get_run_step_list(
                 session=self.session, run_id=self.run_id, thread_id=run.thread_id
             )
-            loop = self.__run_step(run, run_steps, instruction, tools)
+            loop = self.__run_step(llm, run, run_steps, instruction, tools, memory)
+        self.event_handler.pub_done()
 
-    def __run_step(self, run: Run, run_steps: List[RunStep], instruction: str, tools: List[BaseTool]):
+    def __run_step(
+        self,
+        llm: LLMBackend,
+        run: Run,
+        run_steps: List[RunStep],
+        instruction: str,
+        tools: List[BaseTool],
+        memory: Memory,
+    ):
         """
         执行 run step
         """
@@ -88,35 +120,50 @@ class ThreadRunner:
             if step.type == "tool_calls" and step.status == "completed":
                 tool_call_messages += self.__convert_assistant_tool_calls_to_chat_messages(step)
 
-        messages = context_integration_policy.integrate_context(
-            assistant_system_message + chat_messages + tool_call_messages
-        )
-        # TODO: It is necessary to decide whether to use stream based on configuration
-        response_stream = self.llm.run(
+        # memory
+        messages = assistant_system_message + tool_call_messages + memory.integrate_context(chat_messages)
+
+        response_stream = llm.run(
             messages=messages,
             model=run.model,
             tools=[tool.openai_function for tool in tools],
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
             stream=True,
+            extra_body=run.extra_body,
+            temperature=run.temperature,
+            top_p=run.top_p,
         )
 
-        # create message creation run step callback
-        def _create_message_creation_run_step():
+        # create message callback
+        create_message_callback = partial(
+            MessageService.new_message,
+            session=self.session,
+            assistant_id=run.assistant_id,
+            thread_id=run.thread_id,
+            run_id=run.id,
+            role="assistant",
+        )
+
+        # create 'message creation' run step callback
+        def _create_message_creation_run_step(message_id):
             return RunStepService.new_run_step(
                 session=self.session,
                 type="message_creation",
                 assistant_id=run.assistant_id,
                 thread_id=run.thread_id,
                 run_id=run.id,
-                step_details={"type": "message_creation"},
+                step_details={"type": "message_creation", "message_creation": {"message_id": message_id}},
             )
 
         llm_callback_handler = LLMCallbackHandler(
-            run_id=run.id, on_final_message_start_func=_create_message_creation_run_step
+            run_id=run.id,
+            on_step_create_func=_create_message_creation_run_step,
+            on_message_create_func=create_message_callback,
+            event_handler=self.event_handler,
         )
         response_msg = llm_callback_handler.handle_llm_response(response_stream)
-        message_creation_run_step = llm_callback_handler.on_final_message_start_func_output
-        logging.info(f"chat_response_message: {response_msg}")
+        message_creation_run_step = llm_callback_handler.step
+        logging.info("chat_response_message: %s", response_msg)
 
         if msg_util.is_tool_call(response_msg):
             # tool & tool_call definition dict
@@ -131,6 +178,8 @@ class ThreadRunner:
                 run_id=run.id,
                 step_details={"type": "tool_calls", "tool_calls": [tool_call_dict for _, tool_call_dict in tool_calls]},
             )
+            self.event_handler.pub_run_step_created(new_run_step)
+            self.event_handler.pub_run_step_in_progress(new_run_step)
 
             internal_tool_calls = list(filter(lambda _tool_calls: _tool_calls[0] is not None, tool_calls))
             external_tool_call_dict = [tool_call_dict for tool, tool_call_dict in tool_calls if tool is None]
@@ -144,7 +193,7 @@ class ThreadRunner:
                         tasks=internal_tool_calls,
                         timeout=tool_settings.TOOL_WORKER_EXECUTION_TIMEOUT,
                     )
-                    RunStepService.update_step_details(
+                    new_run_step = RunStepService.update_step_details(
                         session=self.session,
                         run_step_id=new_run_step.id,
                         step_details={"type": "tool_calls", "tool_calls": tool_calls_with_outputs},
@@ -156,7 +205,7 @@ class ThreadRunner:
 
             if external_tool_call_dict:
                 # run 设置为 action required，等待业务完成更新并再次拉起
-                RunService.to_requires_action(
+                run = RunService.to_requires_action(
                     session=self.session,
                     run_id=run.id,
                     required_action={
@@ -164,46 +213,72 @@ class ThreadRunner:
                         "submit_tool_outputs": {"tool_calls": external_tool_call_dict},
                     },
                 )
+                self.event_handler.pub_run_step_delta(
+                    step_id=new_run_step.id, step_details={"type": "tool_calls", "tool_calls": external_tool_call_dict}
+                )
+                self.event_handler.pub_run_requires_action(run)
             else:
+                self.event_handler.pub_run_step_completed(new_run_step)
                 return True
         else:
-            # 无 tool call 信息，创建 message，结束任务
-            new_message = MessageService.new_message(
+            # 无 tool call 信息，message 生成结束，更新状态
+            new_message = MessageService.modify_message_sync(
                 session=self.session,
-                role=response_msg.role,
-                content=response_msg.content,
-                assistant_id=run.assistant_id,
                 thread_id=run.thread_id,
-                run_id=run.id,
+                message_id=llm_callback_handler.message.id,
+                body=MessageUpdate(content=response_msg.content),
             )
+            self.event_handler.pub_message_completed(new_message)
 
-            RunStepService.update_step_details(
+            new_step = RunStepService.update_step_details(
                 session=self.session,
                 run_step_id=message_creation_run_step.id,
                 step_details={"type": "message_creation", "message_creation": {"message_id": new_message.id}},
                 completed=True,
             )
             RunService.to_completed(session=self.session, run_id=run.id)
+            self.event_handler.pub_run_step_completed(new_step)
 
         # 任务结束
+        self.event_handler.pub_run_completed(run)
         return False
+
+    def __init_llm_backend(self, assistant_id):
+        if settings.AUTH_ENABLE:
+            # init llm backend with token id
+            token_id = TokenRelationService.get_token_id_by_relation(
+                session=self.session, relation_type="assistant", relation_id=assistant_id
+            )
+            token = TokenService.get_token_by_id(self.session, token_id)
+            return LLMBackend(base_url=token.llm_base_url, api_key=token.llm_api_key)
+        else:
+            # init llm backend with llm settings
+            return LLMBackend(base_url=llm_settings.OPENAI_API_BASE, api_key=llm_settings.OPENAI_API_KEY)
 
     def __generate_chat_messages(self, messages: List[Message]):
         """
         根据历史信息生成 chat message
         """
 
-        # message 构造
-        def message_mapping(message: Message):
+        def file_load(file: File):
+            file_data = storage.load(file.key)
+            content = doc_loader.load(file_data)
+            return f"For reference, here is is the content of file {file.filename}: '{content}'"
+
+        chat_messages = []
+        for message in messages:
             role = message.role
 
             if role == "system" or role == "assistant" or role == "user":
-                message_content = message.content[0]["text"]["value"]
-                return msg_util.new_message(role, message_content)
-            else:
-                pass
-
-        return [message_mapping(msg) for msg in messages]
+                message_content = []
+                if role == "user" and message.file_ids:
+                    files = FileService.get_file_list_by_ids(session=self.session, file_ids=message.file_ids)
+                    for file in files:
+                        chat_messages.append(msg_util.new_message(role, file_load(file)))
+                else:
+                    message_content = message.content[0]["text"]["value"]
+                    chat_messages.append(msg_util.new_message(role, message_content))
+        return chat_messages
 
     def __convert_assistant_tool_calls_to_chat_messages(self, run_step: RunStep):
         """
