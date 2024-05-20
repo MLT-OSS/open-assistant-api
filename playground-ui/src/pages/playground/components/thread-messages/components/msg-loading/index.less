@@ -1,0 +1,38 @@
+
+@keyframes loading {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.5);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.loading-container {
+    .loading-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: #c2bcbc;
+        display: inline-block;
+        margin: 0 4px;
+        animation: loading 1.8s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .loading-dot:nth-child(2) {
+        animation-delay: 0.5s;
+    }
+
+    .loading-dot:nth-child(3) {
+        animation-delay: 1s;
+    }
+}
