@@ -11,7 +11,7 @@ from app.schemas.common import DeleteResponse
 class AssistantService:
     @staticmethod
     async def create_assistant(*, session: AsyncSession, body: AssistantCreate, token_id: str = None) -> Assistant:
-        db_assistant = Assistant.model_validate(body)
+        db_assistant = Assistant.model_validate(body.model_dump(by_alias=True))
         session.add(db_assistant)
         auth_policy.insert_token_rel(
             session=session, token_id=token_id, relation_type=RelationType.Assistant, relation_id=db_assistant.id
@@ -49,6 +49,15 @@ class AssistantService:
     async def get_assistant(*, session: AsyncSession, assistant_id: str) -> Assistant:
         statement = select(Assistant).where(Assistant.id == assistant_id)
         result = await session.execute(statement)
+        assistant = result.scalars().one_or_none()
+        if assistant is None:
+            raise ResourceNotFoundError(message="Assistant not found")
+        return assistant
+
+    @staticmethod
+    def get_assistant_sync(*, session: AsyncSession, assistant_id: str) -> Assistant:
+        statement = select(Assistant).where(Assistant.id == assistant_id)
+        result = session.execute(statement)
         assistant = result.scalars().one_or_none()
         if assistant is None:
             raise ResourceNotFoundError(message="Assistant not found")

@@ -45,6 +45,24 @@ def test_create_assistant_with_extra_body():
     session.close()
 
 
+# test create assistants with metadata
+def test_create_assistant_with_metadata():
+    client = openai.OpenAI(base_url="http://localhost:8086/api/v1", api_key="xxx")
+    assistant = client.beta.assistants.create(
+        name="Assistant Demo",
+        instructions="你是一个有用的助手",
+        metadata={"memory": {"type": "window", "window_size": 2, "max_token_size": 5}},
+        model="gpt-3.5-turbo-1106",
+    )
+    query = session.query(Assistant).filter(Assistant.id == assistant.id)
+    assistant = query.one()
+    assert assistant.name == "Assistant Demo"
+    assert assistant.instructions == "你是一个有用的助手"
+    assert assistant.model == "gpt-3.5-turbo-1106"
+    assert assistant.metadata_ == {"memory": {"type": "window", "window_size": 2, "max_token_size": 5}}
+    session.close()
+
+
 def test_create_assistant_with_temperature_and_top_p():
     client = openai.OpenAI(base_url="http://localhost:8086/api/v1", api_key="xxx")
     assistant = client.beta.assistants.create(

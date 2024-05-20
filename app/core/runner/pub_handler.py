@@ -51,15 +51,16 @@ def read_event(channel: str, x_index: str = None) -> Tuple[Optional[str], Option
 
 def _data_adjust_tools(tools: List[dict]) -> List[dict]:
     def _adjust_tool(tool: dict):
-        if tool["type"] not in { "code_interpreter", "retrieval", "function"}:
+        if tool["type"] not in {"code_interpreter", "retrieval", "function"}:
             return {
                 "type": "function",
                 "function": {
                     "name": tool["type"],
-                }
+                },
             }
         else:
             return tool
+
     if tools:
         return [_adjust_tool(tool) for tool in tools]
     return []
@@ -74,7 +75,7 @@ def _data_adjust(obj):
     data.update({"id": id})
     if hasattr(obj, "tools"):
         data["tools"] = _data_adjust_tools(data["tools"])
-        
+
     if hasattr(obj, "file_ids") and data["file_ids"] is None:
         data["file_ids"] = []
 
@@ -97,8 +98,7 @@ def _data_adjust_message_delta(step_details):
     return step_details
 
 
-def sub_stream(run_id, request: Request,
-               prefix_events: List[dict] = [], suffix_events: List[dict] = []):
+def sub_stream(run_id, request: Request, prefix_events: List[dict] = [], suffix_events: List[dict] = []):
     """
     Subscription chat response stream
     """
@@ -129,19 +129,18 @@ def sub_stream(run_id, request: Request,
 
         for event in suffix_events:
             yield event
+
     return EventSourceResponse(_stream())
 
-class StreamEventHandler():
+
+class StreamEventHandler:
     def __init__(self, run_id: str, is_stream: bool = False) -> None:
         self._channel = generate_channel_name(key=run_id)
         self._is_stream = is_stream
 
     def pub_event(self, event) -> None:
         if self._is_stream:
-            pub_event(self._channel, {
-                "event": event.event,
-                "data": event.data.json()
-            })
+            pub_event(self._channel, {"event": event.event, "data": event.data.json()})
 
     def pub_run_created(self, run):
         self.pub_event(events.ThreadRunCreated(data=_data_adjust(run), event="thread.run.created"))
@@ -168,13 +167,16 @@ class StreamEventHandler():
         self.pub_event(events.ThreadRunStepInProgress(data=_data_adjust(step), event="thread.run.step.in_progress"))
 
     def pub_run_step_delta(self, step_id, step_details):
-        self.pub_event(events.ThreadRunStepDelta(data={
-            "id": step_id,
-            "delta": {
-                "step_details": _data_adjust_message_delta(step_details)
-            },
-            "object": "thread.run.step.delta"
-        }, event="thread.run.step.delta"))
+        self.pub_event(
+            events.ThreadRunStepDelta(
+                data={
+                    "id": step_id,
+                    "delta": {"step_details": _data_adjust_message_delta(step_details)},
+                    "object": "thread.run.step.delta",
+                },
+                event="thread.run.step.delta",
+            )
+        )
 
     def pub_run_step_completed(self, step):
         self.pub_event(events.ThreadRunStepCompleted(data=_data_adjust(step), event="thread.run.step.completed"))
@@ -186,28 +188,29 @@ class StreamEventHandler():
         self.pub_event(events.ThreadMessageCreated(data=_data_adjust_message(message), event="thread.message.created"))
 
     def pub_message_in_progress(self, message):
-        self.pub_event(events.ThreadMessageInProgress(
-            data=_data_adjust_message(message), event="thread.message.in_progress"))
+        self.pub_event(
+            events.ThreadMessageInProgress(data=_data_adjust_message(message), event="thread.message.in_progress")
+        )
 
     def pub_message_completed(self, message):
-        self.pub_event(events.ThreadMessageCompleted(
-            data=_data_adjust_message(message), event="thread.message.completed"))
+        self.pub_event(
+            events.ThreadMessageCompleted(data=_data_adjust_message(message), event="thread.message.completed")
+        )
 
     def pub_message_delta(self, message_id, index, content, role):
         """
         pub MessageDelta
         """
-        self.pub_event(events.ThreadMessageDelta(
-            data=events.MessageDeltaEvent(
-                id=message_id,
-                delta={
-                    "content": [
-                        {"index": index, "type": "text", "text": {"value": content}}
-                    ],
-                    "role": role
-                },
-                object="thread.message.delta"
-            ), event="thread.message.delta"))
+        self.pub_event(
+            events.ThreadMessageDelta(
+                data=events.MessageDeltaEvent(
+                    id=message_id,
+                    delta={"content": [{"index": index, "type": "text", "text": {"value": content}}], "role": role},
+                    object="thread.message.delta",
+                ),
+                event="thread.message.delta",
+            )
+        )
 
     def pub_done(self):
         pub_event(self._channel, {"event": "done", "data": "done"})

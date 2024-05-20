@@ -21,17 +21,20 @@ async def list_assistants(*, session: AsyncSession = Depends(get_async_session),
     statement = auth_policy.token_filter(
         select(Assistant), field=Assistant.id, relation_type=RelationType.Assistant, token_id=token_id
     )
-    return await cursor_page(statement, session)
+    asts_page = await cursor_page(statement, session)
+    asts_page.data = [ast.model_dump(by_alias=True) for ast in asts_page.data]
+    return asts_page
 
 
-@router.post("", response_model=Assistant)
+@router.post("", response_model=Assistant, response_model_exclude={"metadata"})
 async def create_assistant(
     *, session: AsyncSession = Depends(get_async_session), body: AssistantCreate, token_id=Depends(get_token_id)
 ) -> Assistant:
     """
     Create an assistant with a model and instructions.
     """
-    return await AssistantService.create_assistant(session=session, body=body, token_id=token_id)
+    ast = await AssistantService.create_assistant(session=session, body=body, token_id=token_id)
+    return ast.model_dump(by_alias=True)
 
 
 @router.get("/{assistant_id}", response_model=Assistant)
@@ -39,7 +42,8 @@ async def get_assistant(*, session: AsyncSession = Depends(get_async_session), a
     """
     Retrieves an assistant.
     """
-    return await AssistantService.get_assistant(session=session, assistant_id=assistant_id)
+    ast = await AssistantService.get_assistant(session=session, assistant_id=assistant_id)
+    return ast.model_dump(by_alias=True)
 
 
 @router.post("/{assistant_id}", response_model=Assistant)
@@ -49,7 +53,8 @@ async def modify_assistant(
     """
     Modifies an assistant.
     """
-    return await AssistantService.modify_assistant(session=session, assistant_id=assistant_id, body=body)
+    ast = await AssistantService.modify_assistant(session=session, assistant_id=assistant_id, body=body)
+    return ast.model_dump(by_alias=True)
 
 
 @router.delete("/{assistant_id}", response_model=DeleteResponse)
@@ -57,4 +62,5 @@ async def delete_assistant(*, session: AsyncSession = Depends(get_async_session)
     """
     Delete an assistant.
     """
-    return await AssistantService.delete_assistant(session=session, assistant_id=assistant_id)
+    ast = await AssistantService.delete_assistant(session=session, assistant_id=assistant_id)
+    return ast.model_dump(by_alias=True)
