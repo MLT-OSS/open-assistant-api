@@ -4,7 +4,6 @@ from typing import Dict, Tuple, Optional
 
 from app.exceptions.exception import ValidateFailedError
 from app.schemas.tool.action import ActionMethod, ActionParam, ActionBodyType, ChatCompletionFunction
-from app.schemas.tool.authentication import Authentication
 
 
 # This function code from the Open Source Project TaskingAI.

@@ -57,7 +57,8 @@ class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
     top_p: Optional[float] = Field(default=None)  # top_p
 
 
-class RunRead(Run): ...
+class RunRead(Run):
+    ...
 
 
 class RunCreate(BaseModel):

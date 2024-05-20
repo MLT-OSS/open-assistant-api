@@ -10,9 +10,9 @@ from config.config import settings
 from config.llm import llm_settings, tool_settings
 
 from app.core.doc_loaders import doc_loader
-from app.core.runner.context_integration_policy import context_integration_policy
 from app.core.runner.llm_backend import LLMBackend
 from app.core.runner.llm_callback_handler import LLMCallbackHandler
+from app.core.runner.memory import Memory, find_memory
 from app.core.runner.pub_handler import StreamEventHandler
 from app.core.runner.utils import message_util as msg_util
 from app.core.runner.utils.tool_call_util import (
@@ -29,6 +29,7 @@ from app.models.run import Run
 from app.models.run_step import RunStep
 from app.models.file import File
 from app.providers.storage import storage
+from app.services.assistant.assistant import AssistantService
 from app.services.file.file import FileService
 from app.services.message.message import MessageService
 from app.services.run.run import RunService
@@ -79,15 +80,29 @@ class ThreadRunner:
                 instructions += [instruction_supplement]
         instruction = "\n".join(instructions)
 
+        # get memory from assistant metadata
+        # format likes {"memory": {"type": "window", "window_size": 20, "max_token_size": 4000}}
+        ast = AssistantService.get_assistant_sync(session=self.session, assistant_id=run.assistant_id)
+        metadata = ast.metadata_ or {}
+        memory = find_memory(metadata.get("memory", {}))
+
         loop = True
         while loop:
             run_steps = RunStepService.get_run_step_list(
                 session=self.session, run_id=self.run_id, thread_id=run.thread_id
             )
-            loop = self.__run_step(llm, run, run_steps, instruction, tools)
+            loop = self.__run_step(llm, run, run_steps, instruction, tools, memory)
         self.event_handler.pub_done()
 
-    def __run_step(self, llm: LLMBackend, run: Run, run_steps: List[RunStep], instruction: str, tools: List[BaseTool]):
+    def __run_step(
+        self,
+        llm: LLMBackend,
+        run: Run,
+        run_steps: List[RunStep],
+        instruction: str,
+        tools: List[BaseTool],
+        memory: Memory,
+    ):
         """
         执行 run step
         """
@@ -105,9 +120,9 @@ class ThreadRunner:
             if step.type == "tool_calls" and step.status == "completed":
                 tool_call_messages += self.__convert_assistant_tool_calls_to_chat_messages(step)
 
-        messages = context_integration_policy.integrate_context(
-            assistant_system_message + chat_messages + tool_call_messages
-        )
+        # memory
+        messages = assistant_system_message + tool_call_messages + memory.integrate_context(chat_messages)
+
         response_stream = llm.run(
             messages=messages,
             model=run.model,
