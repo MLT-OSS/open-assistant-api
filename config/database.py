@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DB_USER: str = "root"
     DB_PASSWORD: str = "123456"
     DB_POOL_SIZE: int = 20
+    DB_POOL_RECYCLE: int = 3600
 
     @property
     def database_url(self):
