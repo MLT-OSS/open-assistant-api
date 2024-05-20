@@ -128,6 +128,16 @@ services:
       - redis
       - minio
 
+  playground-ui:
+    image: samepaage/open-assistant-playground-ui:main
+    restart: always
+    build:
+      context: ./playground-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
   db:
     image: mysql:5.7.44
     platform: linux/x86_64
@@ -206,11 +216,3 @@ services:
       exit 0;
       "
 
-  playground-ui:
-    build: 
-      context: playground-ui
-      dockerfile: Dockerfile
-    ports: 
-      - "80:80"
-    depends_on:
-      - api 
