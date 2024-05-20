@@ -1,0 +1,47 @@
+dist
+yarn-error.log
+.env
+.env.local
+node_modules
+projects
+
+yarn-error.log
+
+.theme
+.mritemp/
+.mriadmin.js
+
+.umi/
+.umi-production/
+.umi-production
+.history/
+
+#---------------------------------
+# Extensions
+#---------------------------------
+*.gz
+*.log
+*.rar
+*.tar
+*.zip
+
+#---------------------------------
+# IDE generated
+#---------------------------------
+.idea/
+.project
+*.iml
+vscode
+.vscode
+
+#---------------------------------
+# OS generated
+#---------------------------------
+__MACOSX/
+.DS_Store
+Thumbs.db
+/public/output/
+
+
+tmp
+yarn_cache
