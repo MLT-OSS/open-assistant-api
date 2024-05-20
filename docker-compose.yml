@@ -200,4 +200,15 @@ services:
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set minio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY}; /usr/bin/mc mb -p minio/$${BUCKET_NAME}; exit 0; "
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      /usr/bin/mc mb -p minio/$${BUCKET_NAME};
+      exit 0;
+      "
+
+  playground-ui:
+    image: playground
+    ports: 
+      - "80:80"
+    depends_on:
+      - api 

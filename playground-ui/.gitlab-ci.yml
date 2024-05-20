@@ -1,0 +1,163 @@
+stages:
+  - install&build
+  - package
+  - deploy
+  - notify
+variables:
+  APP_NAME: playground-assistant-ui
+  REPOSITORY: hub.intra.mlamp.cn
+  CONTAINER_IMAGE: hub.intra.mlamp.cn/miaozhen-frontend/playground-assistant-ui
+  FF_USE_FASTZIP: "true"
+  ROBOT_TOKEN: ""
+  DEV_ENV: dev
+  TEST_ENV: test
+  PROD_ENV: prod
+.install_packages: &install_packages
+  stage: install&build
+  image: hub.intra.mlamp.cn/miaozhen-frontend/node:v16.14.0
+  tags:
+    - nb
+  artifacts:
+    name: "build_${ENV}_dist"
+    expire_in: 30 mins
+    untracked: false
+    paths:
+      - $CI_PROJECT_DIR/dist
+  script:
+    - node .gitlab-ci-notify.js $ROBOT_TOKEN $CI_PROJECT_NAME '正在部署,请稍候...' $GITLAB_USER_NAME $CI_PIPELINE_URL $CI_COMMIT_REF_NAME
+    - yarn install
+    - yarn build:$ENV
+.package: &package
+  stage: package
+  tags:
+    - nb
+  image:
+    name: hub.intra.mlamp.cn/miaozhen-frontend/docker:18.09.7
+  cache: {}
+  script:
+    - docker login $REPOSITORY -u 'robot$omi-fe' -p $HARBOR_PWD
+    - docker build -t ${PUSH_IMAGE_PATH} --build-arg DEPLOY_ENV="$DEPLOY_ENV" .
+    - docker push ${PUSH_IMAGE_PATH}
+.deploy: &deploy
+  stage: deploy
+  tags:
+    - nb
+  image:
+    name: hub.intra.mlamp.cn/library/cli:v0.0.3
+  dependencies: []
+  cache: {}
+  before_script:
+    - shopt -s expand_aliases
+    - >-
+      alias k="kubectl -n $K8S_SPACE_NAME
+      --server=\"$K8S_SERVER\"
+      --token=\"$K8S_SPACE_TOKEN\" --insecure-skip-tls-verify"
+  script:
+    - DEPLOYMENT=`cat "./deploy/k8s/$TAG/deployment.yml"`
+    - SERVICE=`cat "./deploy/k8s/$TAG/service.yml"`
+    - DEPLOYMENT_NAME="$APP_NAME-$TAG-deployment"
+    - SERVICE_NAME="$APP_NAME-$TAG-svc"
+    - echo "$DEPLOYMENT" | k apply -f -
+    - k set image deployment/$DEPLOYMENT_NAME $APP_NAME-$TAG=$PULL_IMAGE_PATH --record
+    - echo "$SERVICE" | k apply -f -
+install_packages_dev:
+   <<: *install_packages
+   only:
+    - develop
+   variables:
+    ENV: $DEV_ENV
+install_packages_test:
+   <<: *install_packages
+   only:
+    - test
+   variables:
+    ENV: $TEST_ENV
+install_packages_prod:
+   <<: *install_packages
+   only:
+    - tags
+   variables:
+    ENV: $PROD_ENV
+package_dev:
+  <<: *package
+  only:
+    - develop
+  dependencies:
+    - install_packages_dev
+  variables:
+    PUSH_IMAGE_PATH: $CONTAINER_IMAGE:$DEV_ENV$CI_PIPELINE_ID
+    DEPLOY_ENV: "$DEV_ENV"
+package_test:
+  <<: *package
+  only:
+    - test
+  dependencies:
+    - install_packages_test
+  variables:
+    PUSH_IMAGE_PATH: $CONTAINER_IMAGE:$TEST_ENV$CI_PIPELINE_ID
+    DEPLOY_ENV: "$TEST_ENV"
+package_prod:
+  <<: *package
+  only:
+    - tags
+  dependencies:
+    - install_packages_prod
+  variables:
+    PUSH_IMAGE_PATH: $CONTAINER_IMAGE:$CI_COMMIT_TAG
+    DEPLOY_ENV: "$PROD_ENV"
+deploy_dev:
+  <<: *deploy
+  only:
+    - develop
+  variables:
+    TAG: $DEV_ENV
+    K8S_SPACE_NAME: mz-frontend
+    K8S_SPACE_TOKEN: $CI_K8S_PROD_TOKEN
+    K8S_SERVER: https://k8s.nb.intra.mlamp.cn:8443
+    PULL_IMAGE_PATH: $CONTAINER_IMAGE:$DEV_ENV$CI_PIPELINE_ID
+deploy_test:
+  <<: *deploy
+  only:
+    - test
+  variables:
+    TAG: $TEST_ENV
+    K8S_SPACE_NAME: mz-frontend
+    K8S_SPACE_TOKEN: $CI_K8S_PROD_TOKEN
+    K8S_SERVER: https://k8s.nb.intra.mlamp.cn:8443
+    PULL_IMAGE_PATH: $CONTAINER_IMAGE:$TEST_ENV$CI_PIPELINE_ID
+deploy_prod:
+  <<: *deploy
+  when: manual
+  allow_failure: false
+  only:
+    - tags
+  variables:
+    TAG: $PROD_ENV
+    K8S_SPACE_NAME: mz-frontend
+    K8S_SPACE_TOKEN: $CI_K8S_PROD_TOKEN
+    K8S_SERVER: https://k8s.nb.intra.mlamp.cn:8443
+    PULL_IMAGE_PATH: $CONTAINER_IMAGE:$CI_COMMIT_TAG
+notify-job-when-success:
+    stage: notify
+    image: hub.intra.mlamp.cn/miaozhen-frontend/node:v16.13.0
+    script:
+        - node .gitlab-ci-notify.js $ROBOT_TOKEN $CI_PROJECT_NAME '部署完成！' $GITLAB_USER_NAME $CI_PIPELINE_URL $CI_COMMIT_REF_NAME
+    tags:
+        - nb
+    only:
+      - develop
+      - test
+      - tags
+    when: on_success
+notify-job-when-fail:
+    stage: notify
+    image: hub.intra.mlamp.cn/miaozhen-frontend/node:v16.13.0
+    script:
+        - node .gitlab-ci-notify.js $ROBOT_TOKEN $CI_PROJECT_NAME '部署失败！' $GITLAB_USER_NAME $CI_PIPELINE_URL $CI_COMMIT_REF_NAME
+    tags:
+        - nb
+    only:
+      - develop
+      - test
+      - tags
+    when: on_failure
