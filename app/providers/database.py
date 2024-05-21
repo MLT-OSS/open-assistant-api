@@ -22,7 +22,7 @@ engine = create_engine(
     connect_args=connect_args,
     poolclass=QueuePool,
     pool_size=db_settings.DB_POOL_SIZE,
-    pool_recycle=3600,
+    pool_recycle=db_settings.DB_POOL_RECYCLE,
     echo=settings.DEBUG,
 )
 session = scoped_session(sessionmaker(bind=engine))
@@ -33,7 +33,7 @@ async_engine = create_async_engine(
     connect_args=connect_args,
     poolclass=AsyncAdaptedQueuePool,
     pool_size=db_settings.DB_POOL_SIZE,
-    pool_recycle=3600,
+    pool_recycle=db_settings.DB_POOL_RECYCLE,
     echo=settings.DEBUG,
 )
 

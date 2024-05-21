@@ -36,6 +36,7 @@ services:
       DB_USER: open_assistant
       DB_PASSWORD: 123456
       DB_POOL_SIZE: 20
+      DB_POOL_RECYCLE: 3600
 
       # redis
       REDIS_HOST: redis
@@ -89,6 +90,7 @@ services:
       DB_USER: open_assistant
       DB_PASSWORD: 123456
       DB_POOL_SIZE: 20
+      DB_POOL_RECYCLE: 3600
 
       # redis
       REDIS_HOST: redis

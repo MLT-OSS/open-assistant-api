@@ -18,4 +18,5 @@ def run_task(self, run_id: str, stream: bool = False):
         logging.exception(e)
         StreamEventHandler(run_id=run_id, is_stream=True).pub_error(str(e))
         RunService.to_failed(session=session, run_id=run_id, last_error=e)
-    session.close()
+    finally:
+        session.close()
