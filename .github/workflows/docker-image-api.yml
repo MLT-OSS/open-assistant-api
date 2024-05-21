@@ -1,7 +1,9 @@
-name: Docker Image CI
+name: API Docker Image CI
 
 on:
   push:
+    paths-ignore:
+      - 'playground-ui/**'
     branches:
       - 'main'
   release:
