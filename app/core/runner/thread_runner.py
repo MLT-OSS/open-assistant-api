@@ -121,7 +121,7 @@ class ThreadRunner:
                 tool_call_messages += self.__convert_assistant_tool_calls_to_chat_messages(step)
 
         # memory
-        messages = assistant_system_message + tool_call_messages + memory.integrate_context(chat_messages)
+        messages = assistant_system_message + memory.integrate_context(chat_messages) + tool_call_messages 
 
         response_stream = llm.run(
             messages=messages,
