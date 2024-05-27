@@ -13,6 +13,20 @@ from app.services.thread.thread import ThreadService
 
 class MessageService:
     @staticmethod
+    def format_message_content(message_create: MessageCreate) -> List:
+        content = []
+        if isinstance(message_create.content, str):
+            content.append({"type": "text", "text": {"value": message_create.content, "annotations": []}})
+        elif isinstance(message_create.content, list):
+            for msg in message_create.content:
+                if msg.get("type") == "text":
+                    msg_value = msg.get("text")
+                    content.append({"type": "text", "text": {"value": msg_value, "annotations": []}})
+                elif msg.get("type") == "image_file" or msg.get("type") == "image_url":
+                    content.append(msg)
+        return content
+
+    @staticmethod
     def new_message(*, session: Session, content, role, assistant_id, thread_id, run_id) -> Message:
         message = Message(
             content=[{"type": "text", "text": {"value": content, "annotations": []}}],
@@ -38,7 +52,7 @@ class MessageService:
         if thread_id is not None:
             await ThreadService.get_thread(thread_id=thread_id, session=session)
         # TODO message annotations
-        content = [{"type": "text", "text": {"value": body.content, "annotations": []}}]
+        content = MessageService.format_message_content(body)
         db_message = Message.model_validate(body, update={"thread_id": thread_id, "content": content})
         session.add(db_message)
         await session.commit()
@@ -128,13 +142,7 @@ class MessageService:
     @staticmethod
     async def create_messages(*, session: AsyncSession, thread_id: str, run_id: str, assistant_id: str, messages: list):
         for original_message in messages:
-            content = [
-                {
-                    "type": "text",
-                    "text": {"value": original_message["content"], "annotations": []},
-                }
-            ]
-
+            content = MessageService.format_message_content(original_message)
             new_message = Message.model_validate(
                 original_message,
                 update={
@@ -142,7 +150,7 @@ class MessageService:
                     "run_id": run_id,
                     "assistant_id": assistant_id,
                     "content": content,
-                    "role": original_message["role"],
+                    "role": original_message.role,
                 },
             )
             session.add(new_message)

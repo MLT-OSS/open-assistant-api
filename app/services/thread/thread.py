@@ -26,8 +26,8 @@ class ThreadService:
             from app.services.message.message import MessageService
 
             for message in body.messages:
-                if message.role != "user":
-                    raise BadRequestError(message='Role must be "user"')
+                if message.role != "user" and message.role != "assistant":
+                    raise BadRequestError(message='Role must be "user" or "assistant"')
                 await MessageService.create_message(
                     session=session,
                     thread_id=thread_id,

@@ -68,11 +68,14 @@ class ThreadRunner:
         self.event_handler.pub_run_in_progress(run)
         logging.info("processing ThreadRunner task, run_id: %s", self.run_id)
 
-        llm = self.__init_llm_backend(run.assistant_id)
+        # get memory from assistant metadata
+        # format likes {"memory": {"type": "window", "window_size": 20, "max_token_size": 4000}}
+        ast = AssistantService.get_assistant_sync(session=self.session, assistant_id=run.assistant_id)
+        metadata = ast.metadata_ or {}
+        memory = find_memory(metadata.get("memory", {}))
 
+        instructions = [run.instructions] if run.instructions else [ast.instructions]
         tools = find_tools(run, self.session)
-
-        instructions = [run.instructions]
         for tool in tools:
             tool.configure(session=self.session, run=run)
             instruction_supplement = tool.instruction_supplement()
@@ -80,18 +83,16 @@ class ThreadRunner:
                 instructions += [instruction_supplement]
         instruction = "\n".join(instructions)
 
-        # get memory from assistant metadata
-        # format likes {"memory": {"type": "window", "window_size": 20, "max_token_size": 4000}}
-        ast = AssistantService.get_assistant_sync(session=self.session, assistant_id=run.assistant_id)
-        metadata = ast.metadata_ or {}
-        memory = find_memory(metadata.get("memory", {}))
-
+        llm = self.__init_llm_backend(run.assistant_id)
         loop = True
         while loop:
             run_steps = RunStepService.get_run_step_list(
                 session=self.session, run_id=self.run_id, thread_id=run.thread_id
             )
             loop = self.__run_step(llm, run, run_steps, instruction, tools, memory)
+
+        # 任务结束
+        self.event_handler.pub_run_completed(run)
         self.event_handler.pub_done()
 
     def __run_step(
@@ -239,8 +240,6 @@ class ThreadRunner:
             RunService.to_completed(session=self.session, run_id=run.id)
             self.event_handler.pub_run_step_completed(new_step)
 
-        # 任务结束
-        self.event_handler.pub_run_completed(run)
         return False
 
     def __init_llm_backend(self, assistant_id):
@@ -268,16 +267,26 @@ class ThreadRunner:
         chat_messages = []
         for message in messages:
             role = message.role
-
-            if role == "system" or role == "assistant" or role == "user":
+            if role == "user":
                 message_content = []
-                if role == "user" and message.file_ids:
+                if message.file_ids:
                     files = FileService.get_file_list_by_ids(session=self.session, file_ids=message.file_ids)
                     for file in files:
                         chat_messages.append(msg_util.new_message(role, file_load(file)))
                 else:
-                    message_content = message.content[0]["text"]["value"]
+                    for content in message.content:
+                        if content["type"] == "text":
+                            message_content.append({"type": "text", "text": content["text"]["value"]})
+                        elif content["type"] == "image_url":
+                            message_content.append(content)
                     chat_messages.append(msg_util.new_message(role, message_content))
+            elif role == "assistant":
+                message_content = ""
+                for content in message.content:
+                    if content["type"] == "text":
+                        message_content += content["text"]["value"]
+                chat_messages.append(msg_util.new_message(role, message_content))
+
         return chat_messages
 
     def __convert_assistant_tool_calls_to_chat_messages(self, run_step: RunStep):

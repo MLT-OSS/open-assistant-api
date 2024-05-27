@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union, List
 
 from sqlalchemy import Column, Enum
 from sqlmodel import Field, JSON
@@ -18,8 +18,8 @@ class Message(BaseModel, TimeStampMixin, PrimaryKeyMixin, table=True):
 
 
 class MessageCreate(BaseModel):
-    role: str
-    content: str
+    role: str = Field(sa_column=Column(Enum("assistant", "user"), nullable=False))
+    content: Union[str, List[dict]]
     file_ids: Optional[list]
     metadata_: Optional[dict]
 

@@ -8,6 +8,7 @@ from pydantic import root_validator
 
 from app.libs.types import Timestamp
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
+from app.models.message import MessageCreate
 from app.schemas.tool.authentication import Authentication
 
 
@@ -72,7 +73,7 @@ class RunCreate(BaseModel):
     tools: Optional[list] = []
     extra_body: Optional[dict[str, Union[dict[str, Union[Authentication, Any]], Any]]] = {}
     stream: Optional[bool] = False
-    additional_messages: Optional[list] = Field(default=[], sa_column=Column(JSON))  # 消息列表
+    additional_messages: Optional[list[MessageCreate]] = Field(default=[], sa_column=Column(JSON))  # 消息列表
     max_completion_tokens: Optional[int] = None  # 最大完成长度
     max_prompt_tokens: Optional[int] = Field(default=None)  # 最大提示长度
     truncation_strategy: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 截断策略
