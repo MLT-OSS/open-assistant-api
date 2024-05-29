@@ -12,6 +12,7 @@ def test_create_run_with_additional_messages_and_other_parmas():
         name="Assistant Demo",
         instructions="你是一个有用的助手",
         model="gpt-4o",
+        response_format={"type": "json_object"},
     )
     thread = client.beta.threads.create(
         messages=[
@@ -42,7 +43,7 @@ def test_create_run_with_additional_messages_and_other_parmas():
     stream = client.beta.threads.runs.create(
         thread_id=thread.id,
         assistant_id=assistant.id,
-        instructions="",
+        instructions="请用 json 格式回答",
         additional_messages=[
             {
                 "role": "user",
@@ -75,7 +76,7 @@ def test_create_run_with_additional_messages_and_other_parmas():
 
     query = session.query(Run).filter(Run.thread_id == thread.id)
     run = query.one()
-    assert run.instructions == "你是一个有用的助手"
+    assert run.instructions == "请用 json 格式回答"
     assert run.model == "gpt-4o"
     query = session.query(Message).filter(Message.thread_id == thread.id).order_by(Message.created_at)
     messages = query.all()

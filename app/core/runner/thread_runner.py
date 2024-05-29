@@ -133,6 +133,7 @@ class ThreadRunner:
             extra_body=run.extra_body,
             temperature=run.temperature,
             top_p=run.top_p,
+            response_format=run.response_format,
         )
 
         # create message callback
