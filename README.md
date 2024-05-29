@@ -92,14 +92,16 @@ Interface documentation address: http://127.0.0.1:8086/docs
 
 ### Complete Usage Example
 
-In this example, an AI assistant is created and run using the official OpenAI client library, including two built-in
-tools, web_search and retrieval, and a custom function.
+In this example, an AI assistant is created and run using the official OpenAI client library. If you need to explore other usage methods, 
+such as streaming output, tools (web_search, retrieval, function), etc., you can find the corresponding code under the examples directory.
 Before running, you need to run `pip install openai` to install the Python `openai` library.
 
 ```sh
 # !pip install openai
-python tests/e2e/index.py
+export PYTHONPATH=$(pwd) 
+python examples/run_assistant.py 
 ```
+
 
 ### Permissions
 Simple user isolation is provided based on tokens to meet SaaS deployment requirements. It can be enabled by configuring `APP_AUTH_ENABLE`.
