@@ -62,5 +62,4 @@ async def delete_assistant(*, session: AsyncSession = Depends(get_async_session)
     """
     Delete an assistant.
     """
-    ast = await AssistantService.delete_assistant(session=session, assistant_id=assistant_id)
-    return ast.model_dump(by_alias=True)
+    return await AssistantService.delete_assistant(session=session, assistant_id=assistant_id)
