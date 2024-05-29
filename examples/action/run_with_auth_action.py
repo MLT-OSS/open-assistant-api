@@ -1,26 +1,27 @@
 import time
+import logging
+import requests
+import json
 
-import openai
-import pytest
-
-from app.providers.database import session
-from app.schemas.tool.action import ActionBulkCreateRequest
-from app.schemas.tool.authentication import Authentication, AuthenticationType
-from app.services.tool.action import ActionService
-
-
-@pytest.fixture
-def api_url():
-    return "http://127.0.0.1:8086/api/v1/actions"
+from app.exceptions.exception import BadRequestError
+from examples.prerun import client
+from examples.prerun import base_url
+from examples.prerun import api_key
 
 
-@pytest.fixture
-def create_workspace_with_authentication():
-    return {
+# To test the localhost, you can listen to a port using the shell command 'echo -e "HTTP/1.1 200 OK\r\n\r\n Success" | nc -l 9999'.
+# Make sure to change the URL to match your API server.
+auth_server_url = "http://localhost:9999/api/v1"
+
+def create_worksapce_action():
+    """
+    create action with actions api
+    """
+    openapi_schema = {
         "openapi_schema": {
             "openapi": "3.0.0",
             "info": {"title": "Create New Workspace", "version": "1.0.0"},
-            "servers": [{"url": "https://tx.c.csvfx.com/api"}],
+            "servers": [{"url": f"{auth_server_url}"}],
             "paths": {
                 "/tx/v1/workspaces": {
                     "post": {
@@ -74,68 +75,73 @@ def create_workspace_with_authentication():
             },
         }
     }
+    openapi_schema["authentication"] = {"type": "none"}
+    actions_url = f"{base_url}/actions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+    response = requests.request("POST", actions_url, headers=headers, data=json.dumps(openapi_schema), timeout=1000)
+    if response.status_code != 200:
+        raise BadRequestError(f"Failed to create action: {response.text}")
+    return response.json()
 
 
-# 测试带有action的助手,run 的时候传递自己的auth信息
-def test_run_with_action_auth(create_workspace_with_authentication):
-    body = ActionBulkCreateRequest(**create_workspace_with_authentication)
-    body.authentication = Authentication(type=AuthenticationType.none)
-    actions = ActionService.create_actions_sync(session=session, body=body)
-    [create_workspace_with_authentication] = actions
+if __name__ == "__main__":
+    [create_workspace_with_authentication] = create_worksapce_action()
+    logging.info("=====> action: %s\n", create_workspace_with_authentication)
 
-    client = openai.OpenAI(base_url="http://localhost:8086/api/v1", api_key="xxx")
-
-    # 创建带有 action 的 assistant
+    # create a assistant with action
     assistant = client.beta.assistants.create(
         name="Assistant Demo",
-        instructions="你是一个有用的助手",
-        tools=[{"type": "action", "id": create_workspace_with_authentication.id}],
+        instructions="you are a personal assistant",
+        tools=[{"type": "action", "id": create_workspace_with_authentication["id"]}],
         model="gpt-3.5-turbo-1106",
     )
-    print(assistant, end="\n\n")
+    logging.info("=====> : %s\n", assistant)
 
     thread = client.beta.threads.create()
-    print(thread, end="\n\n")
+    logging.info("=====> : %s\n", thread)
 
     message = client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content="在组织63db49f7dcc8bf7b0990903c下,创建一个随机名字的工作空间",
+        content="在组织 63db49f7dcc8bf7b0990903c 下, 创建一个随机名字的工作空间",
     )
-    print(message, end="\n\n")
+    logging.info("=====> : %s\n", message)
 
+    # create a run with auth info
     run = client.beta.threads.runs.create(
-        # model="gpt-3.5-turbo-1106",
         thread_id=thread.id,
         assistant_id=assistant.id,
         instructions="",
         extra_body={
             "extra_body": {
                 "action_authentications": {
-                    create_workspace_with_authentication.id: {
+                    create_workspace_with_authentication["id"]: {
+                        # auth info, change as needed
                         "type": "bearer",
-                        "secret": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI2M2RiNDlhY2RjYzhiZjdiMDk5MDhmZDYiLCJhdWQiOiI2M2RiNDlmN2RjYzhiZjdiMDk5MDkwM2MiLCJ1aWQiOiI2M2RiNDlhY2RjYzhiZjdiMDk5MDhmZDYiLCJpYXQiOjE3MTAxNDkxODcsImV4cCI6MTcxMDIzNTU4N30.h96cKhB8rPGKM2PEq6bg4k2j09gR82HCJHUws232Oe4",
+                        "secret": "xxx",
                     }
                 }
             }
         },
     )
-    print(run, end="\n\n")
+    logging.info("=====> : %s\n", run)
 
     while True:
-        # run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
         run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
         if run.status == "completed":
-            print("done!", end="\n\n")
             messages = client.beta.threads.messages.list(thread_id=thread.id)
 
-            print("messages: ")
+            logging.info("=====> messages:")
             for message in messages:
                 assert message.content[0].type == "text"
-                print(messages)
-                print({"role": message.role, "message": message.content[0].text.value})
-
+                logging.info("%s", {"role": message.role, "message": message.content[0].text.value})
+            break
+        elif run.status == "failed":
+            logging.error("run failed %s\n", run.last_error)
             break
         else:
-            print("\nin progress...")
-            time.sleep(1)
+            logging.info("in progress...\n")
+            time.sleep(5)
