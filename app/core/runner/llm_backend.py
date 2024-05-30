@@ -25,6 +25,7 @@ class LLMBackend:
         extra_body=None,
         temperature=None,
         top_p=None,
+        response_format=None,
     ) -> ChatCompletion | Stream[ChatCompletionChunk]:
         chat_params = {
             "messages": messages,
@@ -44,6 +45,8 @@ class LLMBackend:
         if tools:
             chat_params["tools"] = tools
             chat_params["tool_choice"] = tool_choice if tool_choice else "auto"
+        if isinstance(response_format, dict) and response_format.get("type") == "json_object":
+            chat_params["response_format"] = {"type": "json_object"}
         logging.info("chat_params: %s", chat_params)
         response = self.client.chat.completions.create(**chat_params)
         logging.info("chat_response: %s", response)
