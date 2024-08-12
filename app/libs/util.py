@@ -9,6 +9,8 @@ def datetime2timestamp(value: datetime):
 
 
 def str2datetime(value: str):
+    if not value:
+        return None
     return datetime.fromisoformat(value)
 
 

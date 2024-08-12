@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic_core import core_schema
 
-from app.libs.util import datetime2timestamp
+from app.libs.util import datetime2timestamp, str2datetime
 
 from app.libs.bson.objectid import ObjectId as ObjectId  # noqa
 
@@ -27,6 +27,15 @@ class Timestamp(datetime):
                 ])
             ]),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda x: str(x)
+                lambda x: to_timestamp(x)
             ),
         )
+
+
+def to_timestamp(x):
+    if isinstance(x, datetime):
+        return x.timestamp()
+    elif isinstance(x, str):
+        return str2datetime(x)
+    else:
+        return x
