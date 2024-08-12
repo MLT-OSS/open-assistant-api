@@ -53,6 +53,8 @@ langchain = "^0.2.12"
 langchain-community = "^0.2.11"
 fastapi = "^0.112.0"
 fastapi-pagination = "^0.12.26"
+httpx = "^0.27.0"
+distro = "^1.9.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -60,8 +62,6 @@ black = "^23.12.1"
 ruff = "^0.1.9"
 pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
-httpx = "^0.27.0"
-distro = "^1.9.0"
 
 [build-system]
 requires = ["poetry-core"]
