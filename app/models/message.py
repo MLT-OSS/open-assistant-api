@@ -19,13 +19,11 @@ class Message(BaseModel, TimeStampMixin, PrimaryKeyMixin, table=True):
 
 class MessageCreate(BaseModel):
     role: str = Field(sa_column=Column(Enum("assistant", "user"), nullable=False))
-    content: Union[str, List[dict]]
-    file_ids: Optional[list]
-    metadata_: Optional[dict]
+    content: Union[str, List[dict]] = Field(nullable=False)
+    file_ids: Optional[list] = Field(default=None)
+    metadata_: Optional[dict] = Field(default=None)
 
 
 class MessageUpdate(BaseModel):
-    # thread_id: str
-    # assistant_id: Optional[str]
-    content: Optional[str]
-    metadata_: Optional[dict]
+    content: Optional[str] = Field(default=None)
+    metadata_: Optional[dict] = Field(default=None)
