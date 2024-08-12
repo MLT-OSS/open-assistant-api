@@ -6,6 +6,7 @@ from concurrent.futures import Executor
 
 from sqlalchemy.orm import Session
 
+from app.models.token_relation import RelationType
 from config.config import settings
 from config.llm import llm_settings, tool_settings
 
@@ -247,7 +248,7 @@ class ThreadRunner:
         if settings.AUTH_ENABLE:
             # init llm backend with token id
             token_id = TokenRelationService.get_token_id_by_relation(
-                session=self.session, relation_type="assistant", relation_id=assistant_id
+                session=self.session, relation_type=RelationType.Assistant, relation_id=assistant_id
             )
             token = TokenService.get_token_by_id(self.session, token_id)
             return LLMBackend(base_url=token.llm_base_url, api_key=token.llm_api_key)
