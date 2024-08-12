@@ -7,12 +7,7 @@ from app.libs.types import Timestamp
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
 
 
-class RunStep(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
-    __table_args__ = (
-        Index("run_step_run_id_idx", "run_id"),
-        Index("run_step_run_id_type_idx", "run_id", "type"),
-    )
-
+class RunStepBase(BaseModel):
     status: str = Field(
         sa_column=Column(Enum("cancelled", "completed", "expired", "failed", "in_progress"), nullable=False)
     )
@@ -31,5 +26,12 @@ class RunStep(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
     message_id: Optional[str] = Field(default=None)
 
 
-class RunStepRead(RunStep):
+class RunStep(RunStepBase, PrimaryKeyMixin, TimeStampMixin, table=True):
+    __table_args__ = (
+        Index("run_step_run_id_idx", "run_id"),
+        Index("run_step_run_id_type_idx", "run_id", "type"),
+    )
+
+
+class RunStepRead(RunStepBase):
     pass

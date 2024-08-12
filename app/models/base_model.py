@@ -1,7 +1,7 @@
 from typing import Optional
 
 import orjson
-from sqlalchemy import Column, DateTime, text
+from sqlalchemy import DateTime, text
 from sqlalchemy.orm import declared_attr
 from sqlmodel import SQLModel, Field
 
@@ -32,10 +32,10 @@ class BaseModel(SQLModel):
 
 class TimeStampMixin(SQLModel):
     created_at: Optional[Timestamp] = Field(
-        sa_column=Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+        sa_type=DateTime, default=None, nullable=False,  sa_column_kwargs={"server_default": text("CURRENT_TIMESTAMP")}
     )
     updated_at: Optional[Timestamp] = Field(
-        sa_column=Column(DateTime, server_default=text("null"), onupdate=text("CURRENT_TIMESTAMP"))
+        sa_type=DateTime, default=None, sa_column_kwargs={"onupdate": text("CURRENT_TIMESTAMP")}
     )
 
 

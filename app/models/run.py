@@ -4,7 +4,7 @@ from sqlalchemy import Column, Enum
 from sqlalchemy.sql.sqltypes import JSON, TEXT
 from sqlmodel import Field
 
-from pydantic import root_validator
+from pydantic import model_validator
 
 from app.libs.types import Timestamp
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
@@ -12,7 +12,7 @@ from app.models.message import MessageCreate
 from app.schemas.tool.authentication import Authentication
 
 
-class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
+class RunBase(BaseModel):
     instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
     model: str = Field(default=None)
     status: str = Field(
@@ -58,7 +58,11 @@ class Run(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
     top_p: Optional[float] = Field(default=None)  # top_p
 
 
-class RunRead(Run):
+class Run(RunBase, PrimaryKeyMixin, TimeStampMixin, table=True):
+    ...
+
+
+class RunRead(RunBase):
     ...
 
 
@@ -82,8 +86,8 @@ class RunCreate(BaseModel):
     temperature: Optional[float] = Field(default=None)  # 温度
     top_p: Optional[float] = Field(default=None)  # top_p
 
-    @root_validator()
-    def root_validator(cls, data: Any):
+    @model_validator(mode="before")
+    def model_validator(cls, data: Any):
         extra_body = data.get("extra_body")
         if extra_body:
             action_authentications = extra_body.get("action_authentications")
@@ -98,8 +102,8 @@ class RunUpdate(BaseModel):
     metadata_: Optional[dict] = Field(alias="metadata")
     extra_body: Optional[dict[str, Authentication]] = {}
 
-    @root_validator()
-    def root_validator(cls, data: Any):
+    @model_validator(mode="before")
+    def model_validator(cls, data: Any):
         extra_body = data.get("extra_body")
         if extra_body:
             action_authentications = extra_body.get("action_authentications")
