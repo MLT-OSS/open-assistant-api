@@ -14,10 +14,10 @@ class Thread(BaseModel, PrimaryKeyMixin, TimeStampMixin, table=True):
 
 class ThreadCreate(BaseModel):
     object: str = "thread"
-    messages: Optional[list[MessageCreate]]
-    # metadata: Optional[dict]
-    thread_id: Optional[str]
-    end_message_id: Optional[str]
+    messages: Optional[list[MessageCreate]] = Field(default=None)
+    # metadata: Optional[dict] = Field(default=None)
+    thread_id: Optional[str] = Field(default=None)
+    end_message_id: Optional[str] = Field(default=None)
 
 
 class ThreadUpdate(BaseModel):
