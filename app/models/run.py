@@ -68,10 +68,10 @@ class RunRead(RunBase, PrimaryKeyMixin, TimeStampMixin):
 
 class RunCreate(BaseModel):
     assistant_id: str
-    status: str = "queued"
-    instructions: str = None
-    additional_instructions: str = None
-    model: str = None
+    status: Optional[str] = "queued"
+    instructions: Optional[str] = None
+    additional_instructions: Optional[str] = None
+    model: Optional[str] = None
     file_ids: Optional[list] = []
     metadata_: Optional[dict] = Field(default={}, alias="metadata")
     tools: Optional[list] = []
