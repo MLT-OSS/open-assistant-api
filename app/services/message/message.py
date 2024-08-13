@@ -53,7 +53,7 @@ class MessageService:
             await ThreadService.get_thread(thread_id=thread_id, session=session)
         # TODO message annotations
         content = MessageService.format_message_content(body)
-        db_message = Message.model_validate(body, update={"thread_id": thread_id, "content": content})
+        db_message = Message.model_validate(body.model_dump(by_alias=True), update={"thread_id": thread_id, "content": content}, from_attributes=True)
         session.add(db_message)
         await session.commit()
         await session.refresh(db_message)
@@ -144,7 +144,7 @@ class MessageService:
         for original_message in messages:
             content = MessageService.format_message_content(original_message)
             new_message = Message.model_validate(
-                original_message,
+                original_message.model_dump(by_alias=True),
                 update={
                     "thread_id": thread_id,
                     "run_id": run_id,

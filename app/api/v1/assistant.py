@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.api.deps import get_token_id, get_async_session
-from app.models.assistant import Assistant, AssistantUpdate, AssistantCreate
+from app.models.assistant import Assistant, AssistantUpdate, AssistantCreate, AssistantRead
 from app.libs.paginate import cursor_page, CommonPage
 from app.models.token_relation import RelationType
 from app.providers.auth_provider import auth_policy
@@ -13,7 +13,7 @@ from app.services.assistant.assistant import AssistantService
 router = APIRouter()
 
 
-@router.get("", response_model=CommonPage[Assistant])
+@router.get("", response_model=CommonPage[AssistantRead])
 async def list_assistants(*, session: AsyncSession = Depends(get_async_session), token_id=Depends(get_token_id)):
     """
     Returns a list of assistants.
@@ -26,10 +26,10 @@ async def list_assistants(*, session: AsyncSession = Depends(get_async_session),
     return asts_page
 
 
-@router.post("", response_model=Assistant, response_model_exclude={"metadata"})
+@router.post("", response_model=AssistantRead)
 async def create_assistant(
     *, session: AsyncSession = Depends(get_async_session), body: AssistantCreate, token_id=Depends(get_token_id)
-) -> Assistant:
+):
     """
     Create an assistant with a model and instructions.
     """
@@ -37,8 +37,8 @@ async def create_assistant(
     return ast.model_dump(by_alias=True)
 
 
-@router.get("/{assistant_id}", response_model=Assistant)
-async def get_assistant(*, session: AsyncSession = Depends(get_async_session), assistant_id: str) -> Assistant:
+@router.get("/{assistant_id}", response_model=AssistantRead)
+async def get_assistant(*, session: AsyncSession = Depends(get_async_session), assistant_id: str):
     """
     Retrieves an assistant.
     """
@@ -46,10 +46,10 @@ async def get_assistant(*, session: AsyncSession = Depends(get_async_session), a
     return ast.model_dump(by_alias=True)
 
 
-@router.post("/{assistant_id}", response_model=Assistant)
+@router.post("/{assistant_id}", response_model=AssistantRead)
 async def modify_assistant(
     *, session: AsyncSession = Depends(get_async_session), assistant_id: str, body: AssistantUpdate
-) -> Assistant:
+):
     """
     Modifies an assistant.
     """

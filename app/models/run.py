@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Optional, Any, Union
 
+from pydantic import Field as PDField
+
 from sqlalchemy import Column, Enum
 from sqlalchemy.sql.sqltypes import JSON, TEXT
 from sqlmodel import Field
@@ -36,7 +38,7 @@ class RunBase(BaseModel):
     thread_id: str = Field(default=None, nullable=False)
     object: str = Field(nullable=False, default="thread.run")
     file_ids: Optional[list] = Field(default=[], sa_column=Column(JSON))
-    metadata_: Optional[dict] = Field(default={}, sa_column=Column("metadata", JSON))
+    metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON), schema_extra={"validation_alias": "metadata"})
     last_error: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     required_action: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     tools: Optional[list] = Field(default=[], sa_column=Column(JSON))
@@ -59,11 +61,7 @@ class RunBase(BaseModel):
 
 
 class Run(RunBase, PrimaryKeyMixin, TimeStampMixin, table=True):
-    ...
-
-
-class RunRead(RunBase, PrimaryKeyMixin, TimeStampMixin):
-    ...
+    pass
 
 
 class RunCreate(BaseModel):
@@ -93,13 +91,13 @@ class RunCreate(BaseModel):
             action_authentications = extra_body.get("action_authentications")
             if action_authentications:
                 res = action_authentications.values()
-                [i.encrypt() for i in res]
+                [Authentication.model_validate(i).encrypt() for i in res]
         return data
 
 
 class RunUpdate(BaseModel):
     tools: Optional[list] = []
-    metadata_: Optional[dict] = Field(alias="metadata")
+    metadata_: Optional[dict] = Field(default=None)
     extra_body: Optional[dict[str, Authentication]] = {}
 
     @model_validator(mode="before")
@@ -109,5 +107,9 @@ class RunUpdate(BaseModel):
             action_authentications = extra_body.get("action_authentications")
             if action_authentications:
                 res = action_authentications.values()
-                [i.encrypt() for i in res]
+                [Authentication.model_validate(i).encrypt() for i in res]
         return data
+
+
+class RunRead(RunBase, TimeStampMixin, PrimaryKeyMixin):
+    metadata_: Optional[dict] = PDField(default=None, alias="metadata")

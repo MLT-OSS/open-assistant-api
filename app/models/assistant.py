@@ -1,5 +1,7 @@
 from typing import Optional, Union
 
+from pydantic import Field as PDField
+
 from sqlalchemy import Column
 from sqlmodel import Field, JSON, TEXT
 
@@ -11,7 +13,7 @@ class AssistantBase(BaseModel):
     description: Optional[str] = Field(default=None)
     file_ids: Optional[list] = Field(default=None, sa_column=Column(JSON))
     instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
-    metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON), alias="metadata")
+    metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON), schema_extra={"validation_alias": "metadata"})
     name: Optional[str] = Field(default=None)
     tools: Optional[list] = Field(default=None, sa_column=Column(JSON))
     extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
@@ -19,10 +21,11 @@ class AssistantBase(BaseModel):
     tool_resources: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 工具资源
     temperature: Optional[float] = Field(default=None)  # 温度
     top_p: Optional[float] = Field(default=None)  # top_p
+    object: str = Field(nullable=False, default="assistant")
 
 
 class Assistant(AssistantBase, PrimaryKeyMixin, TimeStampMixin, table=True):
-    object: str = Field(nullable=False, default="assistant")
+    pass
 
 
 class AssistantCreate(AssistantBase):
@@ -34,7 +37,7 @@ class AssistantUpdate(BaseModel):
     description: Optional[str] = Field(default=None)
     file_ids: Optional[list] = Field(default=None, sa_column=Column(JSON))
     instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
-    metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON), alias="metadata")
+    metadata_: Optional[dict] = Field(default=None, schema_extra={"validation_alias": "metadata"})
     name: Optional[str] = Field(default=None)
     tools: Optional[list] = Field(default=None, sa_column=Column(JSON))
     extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
@@ -42,3 +45,7 @@ class AssistantUpdate(BaseModel):
     tool_resources: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 工具资源
     temperature: Optional[float] = Field(default=None)  # 温度
     top_p: Optional[float] = Field(default=None)  # top_p
+
+
+class AssistantRead(AssistantBase, PrimaryKeyMixin, TimeStampMixin):
+    metadata_: Optional[dict] = PDField(default=None, alias="metadata")

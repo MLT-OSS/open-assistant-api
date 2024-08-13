@@ -88,7 +88,7 @@ class ActionBulkCreateRequest(BaseModel):
         openapi_schema = data.get("openapi_schema")
         validate_openapi_schema(openapi_schema)
         authentication = data.get("authentication")
-        authentication.encrypt()
+        Authentication.model_validate(authentication).encrypt()
         return data
 
 
@@ -118,7 +118,7 @@ class ActionUpdateRequest(BaseModel):
             validate_openapi_schema(openapi_schema)
         authentication = data.get("authentication")
         if authentication:
-            authentication.encrypt()
+            Authentication.model_validate(authentication).encrypt()
         return data
 
 
@@ -155,7 +155,7 @@ class ActionParam(BaseModel):
     description: str
     enum: Optional[List[str]] = None
     required: bool
-    properties: Optional[Dict[str, Dict]]
+    properties: Optional[Dict[str, Dict]] = None
 
     def is_single_value_enum(self):
         return self.enum and len(self.enum) == 1
