@@ -1,9 +1,9 @@
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Index, Column, Enum
 from sqlmodel import Field, JSON
 
-from app.libs.types import Timestamp
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
 
 
@@ -19,10 +19,10 @@ class RunStepBase(BaseModel):
     metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON))
     last_error: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     step_details: Optional[dict] = Field(default=None, sa_column=Column(JSON))
-    completed_at: Optional[Timestamp] = Field(default=None)
-    cancelled_at: Optional[Timestamp] = Field(default=None)
-    expires_at: Optional[Timestamp] = Field(default=None)
-    failed_at: Optional[Timestamp] = Field(default=None)
+    completed_at: Optional[datetime] = Field(default=None)
+    cancelled_at: Optional[datetime] = Field(default=None)
+    expires_at: Optional[datetime] = Field(default=None)
+    failed_at: Optional[datetime] = Field(default=None)
     message_id: Optional[str] = Field(default=None)
 
 

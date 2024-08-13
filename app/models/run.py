@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Any, Union
 
 from sqlalchemy import Column, Enum
@@ -6,7 +7,6 @@ from sqlmodel import Field
 
 from pydantic import model_validator
 
-from app.libs.types import Timestamp
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
 from app.models.message import MessageCreate
 from app.schemas.tool.authentication import Authentication
@@ -40,11 +40,11 @@ class RunBase(BaseModel):
     last_error: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     required_action: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     tools: Optional[list] = Field(default=[], sa_column=Column(JSON))
-    started_at: Optional[Timestamp] = Field(default=None)
-    completed_at: Optional[Timestamp] = Field(default=None)
-    cancelled_at: Optional[Timestamp] = Field(default=None)
-    expires_at: Optional[Timestamp] = Field(default=None)
-    failed_at: Optional[Timestamp] = Field(default=None)
+    started_at: Optional[datetime] = Field(default=None)
+    completed_at: Optional[datetime] = Field(default=None)
+    cancelled_at: Optional[datetime] = Field(default=None)
+    expires_at: Optional[datetime] = Field(default=None)
+    failed_at: Optional[datetime] = Field(default=None)
     additional_instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
     extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
     incomplete_details: Optional[str] = Field(default=None)  # 未完成详情

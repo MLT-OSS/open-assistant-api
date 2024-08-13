@@ -5,7 +5,6 @@ from sse_starlette import EventSourceResponse
 from openai.types.beta import assistant_stream_event as events
 
 from app.exceptions.exception import ResourceNotFoundError, InternalServerError
-from app.libs.util import is_valid_datetime, str2datetime
 from app.providers.database import redis_client
 
 """
@@ -83,8 +82,6 @@ def _data_adjust(obj):
     for key, value in data.items():
         if isinstance(value, datetime):
             data[key] = value.timestamp()
-        elif is_valid_datetime(value):
-            data[key] = str2datetime(value).timestamp()
     return data
 
 
