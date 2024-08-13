@@ -33,5 +33,5 @@ class RunStep(RunStepBase, PrimaryKeyMixin, TimeStampMixin, table=True):
     )
 
 
-class RunStepRead(RunStepBase):
+class RunStepRead(RunStepBase, PrimaryKeyMixin, TimeStampMixin):
     pass

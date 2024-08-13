@@ -62,7 +62,7 @@ class Run(RunBase, PrimaryKeyMixin, TimeStampMixin, table=True):
     ...
 
 
-class RunRead(RunBase):
+class RunRead(RunBase, PrimaryKeyMixin, TimeStampMixin):
     ...
 
 
