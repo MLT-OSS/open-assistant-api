@@ -17,7 +17,7 @@ class AssistantBase(BaseModel):
     name: Optional[str] = Field(default=None)
     tools: Optional[list] = Field(default=None, sa_column=Column(JSON))
     extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
-    response_format: Union[str, dict] = Field(default="auto", sa_column=Column(JSON))  # 响应格式
+    response_format: Optional[Union[str, dict]] = Field(default="auto", sa_column=Column(JSON))  # 响应格式
     tool_resources: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 工具资源
     temperature: Optional[float] = Field(default=None)  # 温度
     top_p: Optional[float] = Field(default=None)  # top_p
@@ -41,7 +41,7 @@ class AssistantUpdate(BaseModel):
     name: Optional[str] = Field(default=None)
     tools: Optional[list] = Field(default=None, sa_column=Column(JSON))
     extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
-    response_format: Union[str, dict] = Field(default="auto", sa_column=Column(JSON))  # 响应格式
+    response_format: Optional[Union[str, dict]] = Field(default="auto", sa_column=Column(JSON))  # 响应格式
     tool_resources: Optional[dict] = Field(default=None, sa_column=Column(JSON))  # 工具资源
     temperature: Optional[float] = Field(default=None)  # 温度
     top_p: Optional[float] = Field(default=None)  # top_p
