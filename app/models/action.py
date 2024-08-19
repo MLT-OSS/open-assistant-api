@@ -1,6 +1,8 @@
 from sqlalchemy import Column, JSON
 from typing import Optional
 
+from pydantic import Field as PDField
+
 from sqlmodel import Field
 
 from app.models.base_model import BaseModel, TimeStampMixin, PrimaryKeyMixin
@@ -14,7 +16,7 @@ class ActionBase(BaseModel):
     openapi_schema: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     authentication: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     extra: Optional[dict] = Field(default=None, sa_column=Column(JSON))
-    metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON))
+    metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON), schema_extra={"validation_alias": "metadata"})
     operation_id: str = Field(nullable=False)
     url: str = Field(nullable=False)
     method: str = Field(nullable=False)
@@ -24,7 +26,12 @@ class ActionBase(BaseModel):
     body_type: str = Field(nullable=False)
     function_def: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     use_for_everyone: bool = Field(default=False, nullable=False)
+    object: str = Field(nullable=False, default="action")
 
 
 class Action(ActionBase, PrimaryKeyMixin, TimeStampMixin, table=True):
-    object: str = Field(nullable=False, default="action")
+    pass
+
+
+class ActionRead(ActionBase, PrimaryKeyMixin, TimeStampMixin):
+    metadata_: Optional[dict] = PDField(default=None, alias="metadata")

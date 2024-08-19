@@ -2,7 +2,7 @@ import logging
 from enum import Enum
 from typing import Optional, Dict
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.utils import aes_encrypt, aes_decrypt
 
@@ -57,7 +57,7 @@ class Authentication(BaseModel):
     secret: Optional[str] = Field(None, min_length=1, max_length=1024)
     content: Optional[Dict] = Field(None)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validate_all_fields_at_the_same_time(cls, data: Dict):
         data = validate_authentication_data(data)
         return data

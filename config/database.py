@@ -1,6 +1,6 @@
 from urllib.parse import quote_plus as urlquote
 
-from pydantic import BaseSettings
+from pydantic.v1 import BaseSettings
 
 
 class Settings(BaseSettings):

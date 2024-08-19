@@ -6,7 +6,7 @@ from sqlmodel import select
 
 from app.api.deps import get_async_session
 from app.models import MessageFile
-from app.models.message import Message, MessageCreate, MessageUpdate
+from app.models.message import Message, MessageCreate, MessageUpdate, MessageRead
 from app.libs.paginate import cursor_page, CommonPage
 from app.services.message.message import MessageService
 
@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.get(
     "/{thread_id}/messages",
-    response_model=CommonPage[Message],
+    response_model=CommonPage[MessageRead],
 )
 async def list_messages(
     *,
@@ -30,35 +30,40 @@ async def list_messages(
     if run_id:
         # 根据 run_id 进行过滤
         statement = statement.where(Message.run_id == run_id)
-    return await cursor_page(statement, session)
+
+    page = await cursor_page(statement, session)
+    page.data = [ast.model_dump(by_alias=True) for ast in page.data]
+    return page
 
 
-@router.post("/{thread_id}/messages", response_model=Message)
+@router.post("/{thread_id}/messages", response_model=MessageRead)
 async def create_message(
     *, session: AsyncSession = Depends(get_async_session), thread_id: str, body: MessageCreate
-) -> Message:
+):
     """
     Create a message.
     """
-    return await MessageService.create_message(session=session, thread_id=thread_id, body=body)
+    message = await MessageService.create_message(session=session, thread_id=thread_id, body=body)
+    return message.model_dump(by_alias=True)
 
 
 @router.get(
     "/{thread_id}/messages/{message_id}",
-    response_model=Message,
+    response_model=MessageRead,
 )
 async def get_message(
     *, session: AsyncSession = Depends(get_async_session), thread_id: str, message_id: str
-) -> Message:
+):
     """
     Retrieve a message.
     """
-    return await MessageService.get_message(session=session, thread_id=thread_id, message_id=message_id)
+    message = await MessageService.get_message(session=session, thread_id=thread_id, message_id=message_id)
+    return message.model_dump(by_alias=True)
 
 
 @router.post(
     "/{thread_id}/messages/{message_id}",
-    response_model=Message,
+    response_model=MessageRead,
 )
 async def modify_message(
     *,
@@ -66,11 +71,12 @@ async def modify_message(
     thread_id: str,
     message_id: str = ...,
     body: MessageUpdate = ...,
-) -> Message:
+):
     """
     Modifies a message.
     """
-    return await MessageService.modify_message(session=session, thread_id=thread_id, message_id=message_id, body=body)
+    message = await MessageService.modify_message(session=session, thread_id=thread_id, message_id=message_id, body=body)
+    return message.model_dump(by_alias=True)
 
 
 @router.get(

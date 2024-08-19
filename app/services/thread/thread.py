@@ -13,7 +13,7 @@ from app.schemas.common import DeleteResponse
 class ThreadService:
     @staticmethod
     async def create_thread(*, session: AsyncSession, body: ThreadCreate, token_id=None) -> Thread:
-        db_thread = Thread.model_validate(body)
+        db_thread = Thread.model_validate(body.model_dump(by_alias=True))
         session.add(db_thread)
         auth_policy.insert_token_rel(
             session=session, token_id=token_id, relation_type=RelationType.Thread, relation_id=db_thread.id
@@ -31,7 +31,7 @@ class ThreadService:
                 await MessageService.create_message(
                     session=session,
                     thread_id=thread_id,
-                    body=MessageCreate.from_orm(message),
+                    body=MessageCreate.model_validate(message.model_dump(by_alias=True)),
                 )
         elif body.thread_id:
             # copy thread

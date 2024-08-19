@@ -2,7 +2,7 @@ from enum import Enum
 import re
 from typing import Optional, Any, Dict, List
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 import openapi_spec_validator
 
@@ -83,12 +83,12 @@ class ActionBulkCreateRequest(BaseModel):
 
     use_for_everyone: bool = Field(default=False)
 
-    @root_validator()
-    def root_validator(cls, data: Any):
+    @model_validator(mode="before")
+    def model_validator(cls, data: Any):
         openapi_schema = data.get("openapi_schema")
         validate_openapi_schema(openapi_schema)
         authentication = data.get("authentication")
-        authentication.encrypt()
+        Authentication.model_validate(authentication).encrypt()
         return data
 
 
@@ -109,8 +109,8 @@ class ActionUpdateRequest(BaseModel):
 
     use_for_everyone: bool = Field(default=False)
 
-    @root_validator()
-    def root_validator(cls, data: Any):
+    @model_validator(mode="before")
+    def model_validator(cls, data: Any):
         if not any([(data.get(key) is not None) for key in ["use_for_everyone", "openapi_schema", "authentication"]]):
             raise ValidateFailedError("At least one field should be filled")
         openapi_schema = data.get("openapi_schema")
@@ -118,7 +118,7 @@ class ActionUpdateRequest(BaseModel):
             validate_openapi_schema(openapi_schema)
         authentication = data.get("authentication")
         if authentication:
-            authentication.encrypt()
+            Authentication.model_validate(authentication).encrypt()
         return data
 
 
@@ -155,7 +155,7 @@ class ActionParam(BaseModel):
     description: str
     enum: Optional[List[str]] = None
     required: bool
-    properties: Optional[Dict[str, Dict]]
+    properties: Optional[Dict[str, Dict]] = None
 
     def is_single_value_enum(self):
         return self.enum and len(self.enum) == 1
