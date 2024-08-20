@@ -58,7 +58,7 @@ distro = "^1.9.0"
 
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.12.1"
+black = "^24.3.0"
 ruff = "^0.1.9"
 pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
