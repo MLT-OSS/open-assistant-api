@@ -1,0 +1,72 @@
+.assistants-form {
+    :global {
+        .ant-upload-list-text {
+            width: -webkit-fill-available;
+            width: -moz-available;    
+        }
+
+        .assistants-form-body {
+            padding: 0 24px;
+            margin-top: 20px;
+        }
+
+        .function-button {
+            color: rgb(16, 163, 127);
+        }
+
+        .ant-form-item-control-input-content {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .ant-form-item{
+            margin-bottom: 6px;
+        }
+        
+
+        .footer-button {
+            width: 100%;
+            height: 50px;
+            position: absolute;
+            padding: 10px 20px;
+            bottom: 0;
+            display: flex !important;
+            justify-content: flex-end !important;
+
+            &-cancel {
+                margin-right: 12px;
+            }
+
+            &-save {
+                background-color: rgb(16, 163, 127);
+            }
+
+            &-save:hover {
+                background-color: rgb(16, 163, 127);
+            }
+        }
+
+        .form-style {
+            position: relative;
+
+            .ant-col {
+                position: static;
+            }
+
+            .ant-form-item-control-input {
+                position: static;
+            }
+
+            .ant-upload-list.ant-upload-list-text {
+                position: absolute;
+                left: 0px;
+                top: 32px;
+            }
+
+            .ant-upload-select {
+                display: flex;
+                justify-content: flex-end;
+            }
+        }
+    }
+}

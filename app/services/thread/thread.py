@@ -1,5 +1,6 @@
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.exceptions.exception import ResourceNotFoundError, BadRequestError
 from app.models.message import MessageCreate
@@ -12,7 +13,7 @@ from app.schemas.common import DeleteResponse
 class ThreadService:
     @staticmethod
     async def create_thread(*, session: AsyncSession, body: ThreadCreate, token_id=None) -> Thread:
-        db_thread = Thread.model_validate(body)
+        db_thread = Thread.model_validate(body.model_dump(by_alias=True))
         session.add(db_thread)
         auth_policy.insert_token_rel(
             session=session, token_id=token_id, relation_type=RelationType.Thread, relation_id=db_thread.id
@@ -25,12 +26,12 @@ class ThreadService:
             from app.services.message.message import MessageService
 
             for message in body.messages:
-                if message.role != "user":
-                    raise BadRequestError(message='Role must be "user"')
+                if message.role != "user" and message.role != "assistant":
+                    raise BadRequestError(message='Role must be "user" or "assistant"')
                 await MessageService.create_message(
                     session=session,
                     thread_id=thread_id,
-                    body=MessageCreate.from_orm(message),
+                    body=MessageCreate.model_validate(message.model_dump(by_alias=True)),
                 )
         elif body.thread_id:
             # copy thread
@@ -68,6 +69,15 @@ class ThreadService:
     async def get_thread(*, session: AsyncSession, thread_id: str) -> Thread:
         statement = select(Thread).where(Thread.id == thread_id)
         result = await session.execute(statement)
+        thread = result.scalars().one_or_none()
+        if thread is None:
+            raise ResourceNotFoundError(message=f"thread {thread_id} not found")
+        return thread
+
+    @staticmethod
+    def get_thread_sync(*, session: Session, thread_id: str) -> Thread:
+        statement = select(Thread).where(Thread.id == thread_id)
+        result = session.execute(statement)
         thread = result.scalars().one_or_none()
         if thread is None:
             raise ResourceNotFoundError(message=f"thread {thread_id} not found")

@@ -1,12 +1,13 @@
+from datetime import datetime
 from typing import Optional
 
 import orjson
-from sqlalchemy import Column, DateTime, text
+from sqlalchemy import DateTime, text
 from sqlalchemy.orm import declared_attr
 from sqlmodel import SQLModel, Field
 
 from app.libs.types import ObjectId
-from app.libs.types import Timestamp
+from app.libs.util import datetime2timestamp
 
 
 def orjson_dumps(v, *, default):
@@ -20,9 +21,11 @@ def to_snake_case(string: str) -> str:
 
 class BaseModel(SQLModel):
     class Config:
-        orm_mode = True
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps
+        from_attributes = True
+        populate_by_name = True
+        json_encoders = {
+            datetime: lambda v: datetime2timestamp(v),
+        }
 
     @classmethod
     @declared_attr
@@ -31,11 +34,11 @@ class BaseModel(SQLModel):
 
 
 class TimeStampMixin(SQLModel):
-    created_at: Optional[Timestamp] = Field(
-        sa_column=Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+    created_at: Optional[datetime] = Field(
+        sa_type=DateTime, default=None, nullable=False,  sa_column_kwargs={"server_default": text("CURRENT_TIMESTAMP")}
     )
-    updated_at: Optional[Timestamp] = Field(
-        sa_column=Column(DateTime, server_default=text("null"), onupdate=text("CURRENT_TIMESTAMP"))
+    updated_at: Optional[datetime] = Field(
+        sa_type=DateTime, default=None, sa_column_kwargs={"onupdate": text("CURRENT_TIMESTAMP")}
     )
 
 

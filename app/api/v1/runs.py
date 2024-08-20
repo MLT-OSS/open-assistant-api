@@ -5,10 +5,9 @@ from starlette.responses import StreamingResponse
 
 from app.api.deps import get_async_session
 from app.core.runner import pub_handler
-from app.exceptions.exception import ResourceNotFoundError, InternalServerError
-from app.models import RunStep
 from app.libs.paginate import cursor_page, CommonPage
 from app.models.run import RunCreate, RunRead, RunUpdate, Run
+from app.models.run_step import RunStep, RunStepRead
 from app.schemas.runs import SubmitToolOutputsRunRequest
 from app.schemas.threads import CreateThreadAndRun
 from app.services.run.run import RunService
@@ -20,7 +19,7 @@ router = APIRouter()
 
 @router.get(
     "/{thread_id}/runs",
-    response_model=CommonPage[Run],
+    response_model=CommonPage[RunRead],
 )
 async def list_runs(
     *,
@@ -31,7 +30,9 @@ async def list_runs(
     Returns a list of runs belonging to a thread.
     """
     await ThreadService.get_thread(session=session, thread_id=thread_id)
-    return await cursor_page(select(Run).where(Run.thread_id == thread_id), session)
+    page = await cursor_page(select(Run).where(Run.thread_id == thread_id), session)
+    page.data = [ast.model_dump(by_alias=True) for ast in page.data]
+    return page.model_dump(by_alias=True)
 
 
 @router.post(
@@ -39,17 +40,21 @@ async def list_runs(
     response_model=RunRead,
 )
 async def create_run(
-    *,
-    session: AsyncSession = Depends(get_async_session),
-    thread_id: str,
-    body: RunCreate = ...,
+    *, session: AsyncSession = Depends(get_async_session), thread_id: str, body: RunCreate = ..., request: Request
 ) -> RunRead:
     """
     Create a run.
     """
     db_run = await RunService.create_run(session=session, thread_id=thread_id, body=body)
-    run_task.apply_async(args=(db_run.id,))
-    return db_run
+    event_handler = pub_handler.StreamEventHandler(run_id=db_run.id, is_stream=body.stream)
+    event_handler.pub_run_created(db_run)
+    event_handler.pub_run_queued(db_run)
+    run_task.apply_async(args=(db_run.id, body.stream))
+
+    if body.stream:
+        return pub_handler.sub_stream(db_run.id, request)
+    else:
+        return db_run.model_dump(by_alias=True)
 
 
 @router.get(
@@ -60,7 +65,8 @@ async def get_run(*, session: AsyncSession = Depends(get_async_session), thread_
     """
     Retrieves a run.
     """
-    return await RunService.get_run(session=session, run_id=run_id, thread_id=thread_id)
+    run = await RunService.get_run(session=session, run_id=run_id, thread_id=thread_id)
+    return run.model_dump(by_alias=True)
 
 
 @router.post(
@@ -77,7 +83,8 @@ async def modify_run(
     """
     Modifies a run.
     """
-    return await RunService.modify_run(session=session, thread_id=thread_id, run_id=run_id, body=body)
+    run = await RunService.modify_run(session=session, thread_id=thread_id, run_id=run_id, body=body)
+    return run.model_dump(by_alias=True)
 
 
 @router.post(
@@ -90,12 +97,13 @@ async def cancel_run(
     """
     Cancels a run that is `in_progress`.
     """
-    return await RunService.cancel_run(session=session, thread_id=thread_id, run_id=run_id)
+    run = await RunService.cancel_run(session=session, thread_id=thread_id, run_id=run_id)
+    return run.model_dump(by_alias=True)
 
 
 @router.get(
     "/{thread_id}/runs/{run_id}/steps",
-    response_model=CommonPage[RunStep],
+    response_model=CommonPage[RunStepRead],
 )
 async def list_run_steps(
     *,
@@ -106,14 +114,17 @@ async def list_run_steps(
     """
     Returns a list of run steps belonging to a run.
     """
-    return await cursor_page(
+    page = await cursor_page(
         select(RunStep).where(RunStep.thread_id == thread_id).where(RunStep.run_id == run_id), session
     )
+    page.data = [ast.model_dump(by_alias=True) for ast in page.data]
+    return page.model_dump(by_alias=True)
+
 
 
 @router.get(
     "/{thread_id}/runs/{run_id}/steps/{step_id}",
-    response_model=RunStep,
+    response_model=RunStepRead,
 )
 async def get_run_step(
     *,
@@ -125,7 +136,8 @@ async def get_run_step(
     """
     Retrieves a run step.
     """
-    return await RunService.get_run_step(thread_id=thread_id, run_id=run_id, step_id=step_id, session=session)
+    run_step = await RunService.get_run_step(thread_id=thread_id, run_id=run_id, step_id=step_id, session=session)
+    return run_step.model_dump(by_alias=True)
 
 
 @router.post(
@@ -138,6 +150,7 @@ async def submit_tool_outputs_to_run(
     thread_id: str,
     run_id: str = ...,
     body: SubmitToolOutputsRunRequest = ...,
+    request: Request,
 ) -> RunRead:
     """
     When a run has the `status: "requires_action"` and `required_action.type` is `submit_tool_outputs`,
@@ -148,51 +161,22 @@ async def submit_tool_outputs_to_run(
     # Resume async task
     if db_run.status == "queued":
         run_task.apply_async(args=(db_run.id,))
-    return db_run
+
+    if body.stream:
+        return pub_handler.sub_stream(db_run.id, request)
+    else:
+        return db_run.model_dump(by_alias=True)
 
 
 @router.post("/runs", response_model=RunRead)
 async def create_thread_and_run(
-    *, session: AsyncSession = Depends(get_async_session), body: CreateThreadAndRun
+    *, session: AsyncSession = Depends(get_async_session), body: CreateThreadAndRun, request: Request
 ) -> RunRead:
     """
     Create a thread and run it in one request.
     """
-    return await RunService.create_thread_and_run(session=session, body=body)
-
-
-@router.get("/{thread_id}/runs/{run_id}/stream")
-async def sub_stream(*, thread_id: str, run_id: str = ..., request: Request):
-    """
-    Subscription chat response stream
-    """
-
-    channel = pub_handler.generate_channel_name(run_id)
-
-    def _to_output_data(data):
-        return f"data: {data}\n\n"
-
-    async def _stream():
-        x_index = None
-        while True:
-            if await request.is_disconnected():
-                break
-
-            if not pub_handler.channel_exist(channel):
-                raise ResourceNotFoundError()
-
-            x_index, event = pub_handler.read_event(channel, x_index)
-            if not event:
-                break
-
-            if event["type"] == "error":
-                raise InternalServerError()
-
-            if event["type"] == "end":
-                break
-
-            yield _to_output_data(event["data"])
-
-        yield _to_output_data("[DONE]")
-
-    return StreamingResponse(_stream(), media_type="text/event-stream")
+    run = await RunService.create_thread_and_run(session=session, body=body)
+    if body.stream:
+        return pub_handler.sub_stream(run.id, request)
+    else:
+        return run.model_dump(by_alias=True)

@@ -48,7 +48,7 @@ assistant = client.beta.assistants.create(
 | 内置 Tool          | 支持扩展               | 不支持扩展                |
 | Code Interpreter | 待开发                | 支持                   |
 | LLM 支持           | 支持更多的 LLM          | 仅 GPT                |
-| Message 流式输出     | 支持                 | 不支持                  |
+| Message 流式输出     | 支持                 | 支持                  |
 | 本地部署             | 支持                 | 不支持                  |
 
 - **LLM 支持**: 相较于 OpenAI 官方版本，可以通过接入 One API 来支持更多的模型。
@@ -89,12 +89,14 @@ Api Base URL: http://127.0.0.1:8086/api/v1
 
 ### 完整使用示例
 
-此示例中使用 OpenAI 官方的 client 库创建并运行了一个 AI 助手，包含了 web_search 和 retrieval 两个内置 tool 和一个自定义 function。
+此示例中使用 OpenAI 官方的 client 库创建并运行了一个 AI 助手。如果需要查看其它使用方式，如流式输出、工具（web_search、retrieval、function)的使用等，
+可以在 examples 查看对应示例。
 运行之前需要运行 `pip install openai` 安装 Python `openai` 库。
 
 ```sh
 # !pip install openai
-python tests/e2e/index.py
+export PYTHONPATH=$(pwd) 
+python examples/run_assistant.py 
 ```
 
 ### 权限

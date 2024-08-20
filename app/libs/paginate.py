@@ -17,9 +17,9 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 
 class CursorParams(BaseModel, AbstractParams):
     limit: int = Query(20, ge=1, le=100, description="Page offset")
-    order: str = "desc"
-    after: Optional[str] = None
-    before: Optional[str] = None
+    order: str = Query(default="desc", description="Sort order")
+    after: Optional[str] = Query(None, description="Page after")
+    before: Optional[str] = Query(None, description="Page before")
 
     def to_raw_params(self) -> CursorRawParams:
         return CursorRawParams(cursor=None, size=self.limit, include_total=True)

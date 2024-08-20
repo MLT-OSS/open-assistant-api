@@ -1,0 +1,51 @@
+.login-container {
+    position: relative;
+    display: flex;
+    min-width: 1440px;
+    height: 100vh;
+    min-height: 700px;
+}
+
+.bg {
+    flex: 1;
+}
+
+.form-container {
+    position: fixed;
+    top: calc(50% - 165px);
+    left: calc(50% - 220px);
+    z-index: 3;
+    width: 440px;
+    height: 410px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 9px 0 rgba(54,54 ,54, 15%);
+    padding: 66px 60px;
+
+    .title {
+        margin-bottom: 24px;
+        font-weight: 100;
+        font-size: 18px;
+    }
+
+    .logo {
+        margin-bottom: 80px;
+    }
+
+    :global {
+        .ant-input,
+        .ant-btn {
+            width: 100%;
+            height: 40px;
+            border-radius: 4px;
+        }
+
+        .ant-input-prefix {
+            margin-right: 14px;
+        }
+
+        .ant-input-affix-wrapper > input.ant-input {
+            padding-left: 8px;
+        }
+    }
+}

@@ -153,5 +153,5 @@ def call_action_api(
             return {"status": response.status_code, "data": data}
     except requests.exceptions.RequestException as e:
         return {"status": 500, "error": f"Failed to make the API call: {e}"}
-    except Exception as e:
-        return {"status": 500, "error": f"Failed to make the API call"}
+    except Exception:
+        return {"status": 500, "error": "Failed to make the API call"}

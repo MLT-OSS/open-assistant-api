@@ -36,6 +36,7 @@ services:
       DB_USER: open_assistant
       DB_PASSWORD: 123456
       DB_POOL_SIZE: 20
+      DB_POOL_RECYCLE: 3600
 
       # redis
       REDIS_HOST: redis
@@ -89,6 +90,7 @@ services:
       DB_USER: open_assistant
       DB_PASSWORD: 123456
       DB_POOL_SIZE: 20
+      DB_POOL_RECYCLE: 3600
 
       # redis
       REDIS_HOST: redis
@@ -127,6 +129,16 @@ services:
       - db
       - redis
       - minio
+
+  playground-ui:
+    image: samepaage/open-assistant-playground-ui:main
+    restart: always
+    build:
+      context: ./playground-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - api
 
   db:
     image: mysql:5.7.44
@@ -200,4 +212,9 @@ services:
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc alias set minio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY}; /usr/bin/mc mb -p minio/$${BUCKET_NAME}; exit 0; "
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      /usr/bin/mc mb -p minio/$${BUCKET_NAME};
+      exit 0;
+      "
+

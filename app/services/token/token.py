@@ -11,7 +11,7 @@ from app.models.token import Token, TokenCreate, TokenUpdate
 class TokenService:
     @staticmethod
     async def create_token(session: AsyncSession, body: TokenCreate) -> Token:
-        db_token = Token.model_validate(body)
+        db_token = Token.model_validate(body.model_dump(by_alias=True))
         session.add(db_token)
         await session.commit()
         await session.refresh(db_token)
