@@ -13,6 +13,7 @@ from app.schemas.threads import CreateThreadAndRun
 from app.services.assistant.assistant import AssistantService
 from app.services.message.message import MessageService
 from app.services.thread.thread import ThreadService
+from app.utils import revise_tool_names
 
 
 class RunService:
@@ -23,6 +24,7 @@ class RunService:
         thread_id: str,
         body: RunCreate = ...,
     ) -> RunRead:
+        revise_tool_names(body.tools)
         # get thread
         await ThreadService.get_thread(session=session, thread_id=thread_id)
         # get assistant
@@ -68,6 +70,7 @@ class RunService:
         run_id: str,
         body: RunUpdate = ...,
     ) -> RunRead:
+        revise_tool_names(body.tools)
         await ThreadService.get_thread(session=session, thread_id=thread_id)
         old_run = await RunService.get_run(session=session, run_id=run_id)
         update_data = body.model_dump(exclude_unset=True)
@@ -84,6 +87,7 @@ class RunService:
         session: AsyncSession,
         body: CreateThreadAndRun = ...,
     ) -> RunRead:
+        revise_tool_names(body.tools)
         # get assistant
         db_asst = await AssistantService.get_assistant(session=session, assistant_id=body.assistant_id)
         # create thread
