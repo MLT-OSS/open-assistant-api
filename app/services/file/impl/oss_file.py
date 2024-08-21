@@ -1,6 +1,9 @@
+import tempfile
 import uuid
 from typing import List, Union, Generator, Tuple
 
+import aiofiles
+import aiofiles.os
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -8,6 +11,7 @@ from sqlmodel import select, col, desc
 
 from app.exceptions.exception import ResourceNotFoundError
 from app.models import File
+from app.providers.r2r import r2r
 from app.providers.storage import storage
 from app.schemas.common import DeleteResponse
 from app.services.file.file import BaseFileService
@@ -47,8 +51,18 @@ class OSSFileService(BaseFileService):
             # TODO: 文件去重策略
             return ext_file
 
-        key = f"{uuid.uuid4()}-{file.filename}"
-        storage.save(filename=key, data=file.file.read())
+        file_suffix = '_' + file.filename
+        with tempfile.NamedTemporaryFile(suffix=file_suffix, delete=True) as temp_file:
+            tmp_file_path = temp_file.name
+            key = f"{uuid.uuid4()}-{file.filename}"
+
+            async with aiofiles.open(tmp_file_path, 'wb') as f:
+                while content := await file.read(1024):
+                    await f.write(content)
+
+            storage.save_from_path(filename=key, local_file_path=tmp_file_path)
+
+            r2r.ingest_file(file_path=tmp_file_path, metadata={"oai_file_key": key})
 
         # 存储
         db_file = File(purpose=purpose, filename=file.filename, bytes=file.size, key=key)
@@ -75,7 +89,7 @@ class OSSFileService(BaseFileService):
     @staticmethod
     async def delete_file(*, session: AsyncSession, file_id: str) -> DeleteResponse:
         ext_file = await OSSFileService.get_file(session=session, file_id=file_id)
-        # TODO 删除s3文件
+        # TODO 删除s3&r2r文件
 
         # 删除记录
         await session.delete(ext_file)
