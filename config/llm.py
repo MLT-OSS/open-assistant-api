@@ -27,7 +27,7 @@ class ToolSettings(BaseSettings):
     WEB_SEARCH_NUM_RESULTS: int = 5
 
     R2R_BASE_URL: str = "http://127.0.0.1:8000"
-    FILE_SEARCH_NUM_RESULTS: int = 10
+    R2R_SEARCH_LIMIT: int = 10
 
     class Config(object):
         env_file = ".env"

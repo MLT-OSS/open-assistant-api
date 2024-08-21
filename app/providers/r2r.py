@@ -24,7 +24,7 @@ class R2R:
             query=query,
             vector_search_settings={
                 "filters": filters,
-                "search_limit": 10,
+                "search_limit": tool_settings.R2R_SEARCH_LIMIT,
                 # TODO: support hybrid search
                 # "do_hybrid_search": True
             },

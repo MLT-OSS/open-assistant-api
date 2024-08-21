@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app.core.tools.base_tool import BaseTool
 from app.models.run import Run
-from app.providers.r2r import r2r
 from app.services.file.file import FileService
 
 
@@ -44,18 +43,7 @@ class FileSearchTool(BaseTool):
             file_key = self.__keys[index]
             file_keys.append(file_key)
 
-        search_results = r2r.search(query, filters={"oai_file_key": {"$in": file_keys}})
-
-        files = {}
-        if search_results:
-            for doc in search_results:
-                file_key = doc.get("metadata").get("oai_file_key")
-                text = doc.get("text")
-                if file_key in files and files[file_key]:
-                    files[file_key] += f"\n\n{text}"
-                else:
-                    files[file_key] = doc.get("text")
-
+        files = FileService.search_in_files(query=query, file_keys=file_keys)
         return files
 
     def instruction_supplement(self) -> str:
