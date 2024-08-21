@@ -16,9 +16,15 @@ if __name__ == "__main__":
         instructions="you are a personal assistant, file content could be retrieved to assist the conversation.",
         model="gpt-3.5-turbo-1106",
         tools=[
-            {"type": "retrieval"},
+            {"type": "file_search"},
         ],
-        file_ids=[file.id],
+        tool_resources={
+            "file_search": {
+                "vector_stores": [{
+                    "file_ids": [file.id]
+                }]
+            }
+        }
     )
     logging.info("=====> : %s\n", assistant)
 
