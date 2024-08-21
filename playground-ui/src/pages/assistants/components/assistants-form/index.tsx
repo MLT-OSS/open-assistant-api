@@ -11,6 +11,7 @@ const { Option } = Select;
 const modelList = [
     { label: 'gpt-4', value: 'gpt-4' },
     { label: 'gpt-4-1106-preview', value: 'gpt-4-1106-preview' },
+    { label: 'gpt-4o', value: 'gpt-4o' },
     { label: 'gpt-3.5-turbo-16k', value: 'gpt-3.5-turbo-16k' },
     { label: 'gpt-3.5-turbo-1106', value: 'gpt-3.5-turbo-1106' },
     { label: 'gpt-3.5-turbo', value: 'gpt-3.5-turbo' },
@@ -54,7 +55,7 @@ export const AssistantsFrom = (props: FormProps) => {
         form.validateFields().then((values) => {
             const val = [
                 { key: 'code_interpreter', val: !!values.code },
-                { key: 'retrieval', val: !!values.retrieval },
+                { key: 'file_search', val: !!values.file_search },
                 { key: 'web_search', val: !!values.search }
             ];
             const tools = val
@@ -140,7 +141,7 @@ export const AssistantsFrom = (props: FormProps) => {
             manual: true,
             onSuccess: (res) => {
                 let code;
-                let retrieval;
+                let file_search;
                 let search;
                 const actions = [];
                 if (res && !isEmpty(res?.tools)) {
@@ -150,8 +151,8 @@ export const AssistantsFrom = (props: FormProps) => {
                             case 'code_interpreter':
                                 code = true;
                                 break;
-                            case 'retrieval':
-                                retrieval = true;
+                            case 'file_search':
+                                file_search = true;
                                 break;
                             case 'web_search':
                                 search = true;
@@ -162,15 +163,15 @@ export const AssistantsFrom = (props: FormProps) => {
                         }
                         // item.type === 'code_interpreter'
                         //     ? (code = true)
-                        //     : item.type === 'retrieval'
-                        //     ? (retrieval = true)
+                        //     : item.type === 'file_search'
+                        //     ? (file_search = true)
                         //     : item.type === 'web_search'
                         //     ? (search = true)
                         //     : undefined;
                     });
                 }
                 form.resetFields();
-                form.setFieldsValue({ ...res, ...{ code, retrieval, search, file_ids: res.file_ids, actions } });
+                form.setFieldsValue({ ...res, ...{ code, file_search, search, file_ids: res.file_ids, actions } });
                 if (!isEmpty(res?.file_ids)) {
                     runFileName({
                         ids: res.file_ids
@@ -219,7 +220,7 @@ export const AssistantsFrom = (props: FormProps) => {
             <Form
                 className={style['assistants-form']}
                 form={form}
-                initialValues={{ code: false, retrieval: false, fileIds: [] }}
+                initialValues={{ code: false, file_search: false, fileIds: [] }}
                 onValuesChange={handelValueChange}>
                 <div className="assistants-form-body">
                     <Row>
@@ -280,11 +281,11 @@ export const AssistantsFrom = (props: FormProps) => {
 
                     <Form.Item
                         valuePropName="checked"
-                        label="Retrieval"
+                        label="File Search"
                         labelCol={{ span: 16 }}
                         wrapperCol={{ span: 8 }}
                         labelAlign="left"
-                        name="retrieval">
+                        name="file_search">
                         <Switch className="code-button" />
                     </Form.Item>
 
