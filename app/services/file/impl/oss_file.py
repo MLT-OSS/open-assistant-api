@@ -39,17 +39,17 @@ class OSSFileService(BaseFileService):
     @staticmethod
     async def create_file(*, session: AsyncSession, purpose: str, file: UploadFile) -> File:
         # 文件是否存在
-        statement = (
-            select(File)
-            .where(File.purpose == purpose)
-            .where(File.filename == file.filename)
-            .where(File.bytes == file.size)
-        )
-        result = await session.execute(statement)
-        ext_file = result.scalars().first()
-        if ext_file is not None:
-            # TODO: 文件去重策略
-            return ext_file
+        # statement = (
+        #     select(File)
+        #     .where(File.purpose == purpose)
+        #     .where(File.filename == file.filename)
+        #     .where(File.bytes == file.size)
+        # )
+        # result = await session.execute(statement)
+        # ext_file = result.scalars().first()
+        # if ext_file is not None:
+        #     # TODO: 文件去重策略
+        #     return ext_file
 
         file_suffix = '_' + file.filename
         with tempfile.NamedTemporaryFile(suffix=file_suffix, delete=True) as temp_file:
