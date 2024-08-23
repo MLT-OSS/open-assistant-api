@@ -18,6 +18,8 @@ Open Assistant API 是一个开源自托管的 AI 智能助手 API，兼容 Open
 
 支持 [One API](https://github.com/songquanpeng/one-api) 可以用其接入更多商业和私有模型。
 
+支持 [R2R](https://github.com/SciPhi-AI/R2R) RAG 引擎。
+
 ## 使用
 
 以下是使用了 OpenAI 官方的 Python `openai` 库的使用示例:
@@ -42,18 +44,19 @@ assistant = client.beta.assistants.create(
 | 功能               | Open Assistant API | OpenAI Assistant API |
 |------------------|--------------------|----------------------|
 | 生态策略             | 开源                 | 闭源                   |
-| RAG 引擎           | 简单实现               | 支持                   |
+| RAG 引擎           | 支持 R2R             | 支持                   |
 | 联网搜索             | 支持                 | 不支持                  |
 | 自定义 Functions    | 支持                 | 支持                   |
 | 内置 Tool          | 支持扩展               | 不支持扩展                |
 | Code Interpreter | 待开发                | 支持                   |
+| 多模态识别            | 支持                 | 支持                   |
 | LLM 支持           | 支持更多的 LLM          | 仅 GPT                |
-| Message 流式输出     | 支持                 | 支持                  |
+| Message 流式输出     | 支持                 | 支持                   |
 | 本地部署             | 支持                 | 不支持                  |
 
 - **LLM 支持**: 相较于 OpenAI 官方版本，可以通过接入 One API 来支持更多的模型。
 - **Tool**: 目前支持联网搜索；可以较容易扩展更多的 Tool。
-- **RAG 引擎**: 目前支持的文件类型有 txt、pdf、html、markdown。我们提供了一个初步的实现。
+- **RAG 引擎**: 支持 R2R RAG 引擎，目前支持的文件类型有 txt、html、markdown、pdf、docx、pptx、xlsx、png、mp3、mp4 等。
 - **Message 流式输出**: 支持 Message 流式输出，提供更流畅的用户体验。
 - **生态策略**: 开源，你可以将服务部署在本地，可以对已有功能进行扩展。
 
@@ -71,6 +74,18 @@ OPENAI_API_KEY=<openai_api_key>
 
 # bing search key (非必填)
 BING_SUBSCRIPTION_KEY=<bing_subscription_key>
+````
+
+建议配置 R2R RAG 引擎替换默认的 RAG 实现，以提供更好的 RAG 能力。
+关于 R2R，可以通过 [R2R Github 仓库](https://github.com/SciPhi-AI/R2R) 了解和使用。
+
+```sh
+# RAG 配置
+# FILE_SERVICE_MODULE=app.services.file.impl.oss_file.OSSFileService
+FILE_SERVICE_MODULE=app.services.file.impl.r2r_file.R2RFileService
+R2R_BASE_URL=http://<r2r_api_address>
+R2R_USERNAME=<r2r_username>
+R2R_PASSWORD=<r2r_password>
 ```
 
 ### 运行
@@ -95,8 +110,8 @@ Api Base URL: http://127.0.0.1:8086/api/v1
 
 ```sh
 # !pip install openai
-export PYTHONPATH=$(pwd) 
-python examples/run_assistant.py 
+export PYTHONPATH=$(pwd)
+python examples/run_assistant.py
 ```
 
 ### 权限
@@ -105,7 +120,7 @@ python examples/run_assistant.py
 ![](docs/imgs/user.png)
 
 1. 验证方式为 Bearer token，可在 Header 中填入 ```Authorization: Bearer ***``` 进行验证
-2. token 管理参考 api 文档中的 token 小节  
+2. token 管理参考 api 文档中的 token 小节
 相关 api 需通过 admin token 验证，配置为 ```APP_AUTH_ADMIN_TOKEN```，默认为 admin
 3. 创建 token 需填入大模型 base_url 和 api_key，创建的 assistant 将使用相关配置访问大模型
 ### 工具
@@ -130,6 +145,7 @@ python examples/run_assistant.py
 
 - [OpenOpenAI](https://github.com/transitive-bullshit/OpenOpenAI): Node 实现的 Assistant API
 - [One API](https://github.com/songquanpeng/one-api): 多模型管理工具
+- [R2R](https://github.com/SciPhi-AI/R2R): RAG 引擎
 - [OpenAI-Python](https://github.com/openai/openai-python): OpenAI Python Client
 - [OpenAI API](https://github.com/openai/openai-openapi): OpenAI 接口定义
 - [LangChain](https://github.com/langchain-ai/langchain): LLM 应用开发库

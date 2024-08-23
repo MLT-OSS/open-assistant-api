@@ -19,6 +19,8 @@ LLM applications.
 
 It supports [One API](https://github.com/songquanpeng/one-api) for integration with more commercial and private models.
 
+It supports [R2R](https://github.com/SciPhi-AI/R2R) RAG engine。
+
 ## Usage
 
 Below is an example of using the official OpenAI Python `openai` library:
@@ -40,21 +42,22 @@ assistant = client.beta.assistants.create(
 
 ## Why Choose Open Assistant API
 
-| Feature                  | Open Assistant API    | OpenAI Assistant API |
-|--------------------------|-----------------------|----------------------|
-| Ecosystem Strategy       | Open Source           | Closed Source        |
-| RAG Engine               | Simple Implementation | Supported            |
-| Internet Search          | Supported             | Not Supported        |
-| Custom Functions         | Supported             | Supported            |
-| Built-in Tool            | Extendable            | Not Extendable       |
-| Code Interpreter         | Under Development     | Supported            |
-| LLM Support              | Supports More LLMs    | Only GPT             |
-| Message Streaming Output | Supports              | Supported        |
-| Local Deployment         | Supported             | Not Supported        |
+| Feature                  | Open Assistant API | OpenAI Assistant API |
+|--------------------------|--------------------|----------------------|
+| Ecosystem Strategy       | Open Source        | Closed Source        |
+| RAG Engine               | Support R2R        | Supported            |
+| Internet Search          | Supported          | Not Supported        |
+| Custom Functions         | Supported          | Supported            |
+| Built-in Tool            | Extendable         | Not Extendable       |
+| Code Interpreter         | Under Development  | Supported            |
+| Multimodal               | Supported          | Supported            |
+| LLM Support              | Supports More LLMs | Only GPT             |
+| Message Streaming Output | Supports           | Supported            |
+| Local Deployment         | Supported          | Not Supported        |
 
 - **LLM Support**: Compared to the official OpenAI version, more models can be supported by integrating with One API.
 - **Tool**: Currently supports online search; can easily expand more tools.
-- **RAG Engine**: The currently supported file types are txt, pdf, html, markdown. We provide a preliminary
+- **RAG Engine**: The currently supported file types are txt, html, markdown, pdf, docx, pptx, xlsx, png, mp3, mp4, etc. We provide a preliminary
   implementation.
 - **Message Streaming Output**: Support message streaming output for a smoother user experience.
 - **Ecosystem Strategy**: Open source, you can deploy the service locally and expand the existing features.
@@ -76,6 +79,18 @@ OPENAI_API_KEY=<openai_api_key>
 BING_SUBSCRIPTION_KEY=<bing_subscription_key>
 ```
 
+It is recommended to configure the R2R RAG engine to replace the default RAG implementation to provide better RAG capabilities.
+You can learn about and use R2R through the [R2R Github repository](https://github.com/SciPhi-AI/R2R).
+
+```sh
+# RAG config
+# FILE_SERVICE_MODULE=app.services.file.impl.oss_file.OSSFileService
+FILE_SERVICE_MODULE=app.services.file.impl.r2r_file.R2RFileService
+R2R_BASE_URL=http://<r2r_api_address>
+R2R_USERNAME=<r2r_username>
+R2R_PASSWORD=<r2r_password>
+```
+
 ### Run
 
 #### Run with Docker Compose:
@@ -92,14 +107,14 @@ Interface documentation address: http://127.0.0.1:8086/docs
 
 ### Complete Usage Example
 
-In this example, an AI assistant is created and run using the official OpenAI client library. If you need to explore other usage methods, 
+In this example, an AI assistant is created and run using the official OpenAI client library. If you need to explore other usage methods,
 such as streaming output, tools (web_search, retrieval, function), etc., you can find the corresponding code under the examples directory.
 Before running, you need to run `pip install openai` to install the Python `openai` library.
 
 ```sh
 # !pip install openai
-export PYTHONPATH=$(pwd) 
-python examples/run_assistant.py 
+export PYTHONPATH=$(pwd)
+python examples/run_assistant.py
 ```
 
 
@@ -135,6 +150,7 @@ We mainly referred to and relied on the following projects:
 
 - [OpenOpenAI](https://github.com/transitive-bullshit/OpenOpenAI): Assistant API implemented in Node
 - [One API](https://github.com/songquanpeng/one-api): Multi-model management tool
+- [R2R](https://github.com/SciPhi-AI/R2R): RAG engine
 - [OpenAI-Python](https://github.com/openai/openai-python): OpenAI Python Client
 - [OpenAI API](https://github.com/openai/openai-openapi): OpenAI interface definition
 - [LangChain](https://github.com/langchain-ai/langchain): LLM application development library
