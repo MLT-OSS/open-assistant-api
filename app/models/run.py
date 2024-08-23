@@ -16,7 +16,7 @@ from app.schemas.tool.authentication import Authentication
 
 class RunBase(BaseModel):
     instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
-    model: str = Field(default=None)
+    model: Optional[str] = Field(default=None)
     status: str = Field(
         default="queued",
         sa_column=Column(
@@ -70,8 +70,7 @@ class RunCreate(BaseModel):
     instructions: Optional[str] = None
     additional_instructions: Optional[str] = None
     model: Optional[str] = None
-    file_ids: Optional[list] = []
-    metadata_: Optional[dict] = Field(default={}, alias="metadata")
+    metadata_: Optional[dict] = Field(default=None, schema_extra={"validation_alias": "metadata"})
     tools: Optional[list] = []
     extra_body: Optional[dict[str, Union[dict[str, Union[Authentication, Any]], Any]]] = {}
     stream: Optional[bool] = False
@@ -97,7 +96,7 @@ class RunCreate(BaseModel):
 
 class RunUpdate(BaseModel):
     tools: Optional[list] = []
-    metadata_: Optional[dict] = Field(default=None)
+    metadata_: Optional[dict] = Field(default=None, schema_extra={"validation_alias": "metadata"})
     extra_body: Optional[dict[str, Authentication]] = {}
 
     @model_validator(mode="before")

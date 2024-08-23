@@ -14,6 +14,7 @@ class MessageBase(BaseModel):
     object: str = Field(nullable=False, default="thread.message")
     content: Optional[list] = Field(default=None, sa_column=Column(JSON))
     file_ids: Optional[list] = Field(default=None, sa_column=Column(JSON))
+    attachments: Optional[list] = Field(default=None, sa_column=Column(JSON))  # 附件
     metadata_: Optional[dict] = Field(default=None, sa_column=Column("metadata", JSON), schema_extra={"validation_alias": "metadata"})
     assistant_id: Optional[str] = Field(default=None)
     run_id: Optional[str] = Field(default=None)
@@ -27,6 +28,7 @@ class MessageCreate(BaseModel):
     role: str = Field(sa_column=Column(Enum("assistant", "user"), nullable=False))
     content: Union[str, List[dict]] = Field(nullable=False)
     file_ids: Optional[list] = Field(default=None)
+    attachments: Optional[list] = Field(default=None, sa_column=Column(JSON))  # 附件
     metadata_: Optional[dict] = Field(default=None, schema_extra={"validation_alias": "metadata"})
 
 
