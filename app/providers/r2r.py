@@ -29,11 +29,8 @@ class R2R:
             vector_search_settings={
                 "filters": filters,
                 "search_limit": tool_settings.R2R_SEARCH_LIMIT,
-                # TODO: support hybrid search
-                # "do_hybrid_search": True
+                "do_hybrid_search": True
             },
-            # TODO: support kg search
-            # kg_search_settings={"use_kg_search": True}
         )
         return search_response.get("results").get("vector_search_results")
 
