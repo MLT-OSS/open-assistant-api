@@ -52,8 +52,8 @@ services:
       S3_REGION: us-east-1
 
       # file service
-      # FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
-      FILE_SERVICE_MODULE: app.services.file.impl.r2r_file.R2RFileService
+      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
+      # FILE_SERVICE_MODULE: app.services.file.impl.r2r_file.R2RFileService
 
       # file search tool
       R2R_BASE_URL: http://r2r:8000
@@ -127,8 +127,8 @@ services:
       WEB_SEARCH_NUM_RESULTS: 5
 
       # file service
-      # FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
-      FILE_SERVICE_MODULE: app.services.file.impl.r2r_file.R2RFileService
+      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
+      # FILE_SERVICE_MODULE: app.services.file.impl.r2r_file.R2RFileService
 
       # file search tool
       R2R_BASE_URL: http://r2r:8000
