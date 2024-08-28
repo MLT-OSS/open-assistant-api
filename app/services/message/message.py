@@ -47,11 +47,30 @@ class MessageService:
         return session.execute(statement).scalars().all()
 
     @staticmethod
-    async def create_message(*, session: AsyncSession, body: MessageCreate, thread_id: Optional[str] = None) -> Message:
+    async def create_message(*, session: AsyncSession, body: MessageCreate, thread_id: str) -> Message:
         # get thread
-        if thread_id is not None:
-            await ThreadService.get_thread(thread_id=thread_id, session=session)
+        thread = await ThreadService.get_thread(thread_id=thread_id, session=session)
         # TODO message annotations
+        body_file_ids = body.file_ids
+        if body.attachments:
+            body_file_ids = [a.get("file_id") for a in body.attachments]
+
+        if body_file_ids:
+            thread_file_ids = []
+            if thread.tool_resources and "file_search" in thread.tool_resources:
+                thread_file_ids = thread.tool_resources.get("file_search").get("vector_stores")[0].get("file_ids")
+            for file_id in body_file_ids:
+                if file_id not in thread_file_ids:
+                    thread_file_ids.append(file_id)
+
+            if thread_file_ids:
+                if not thread.tool_resources:
+                    thread.tool_resources = {}
+                if "file_search" not in thread.tool_resources:
+                    thread.tool_resources["file_search"] = {"vector_stores": [{"file_ids": []}]}
+                thread.tool_resources.get("file_search").get("vector_stores")[0]["file_ids"] = thread_file_ids
+                session.add(thread)
+
         content = MessageService.format_message_content(body)
         db_message = Message.model_validate(body.model_dump(by_alias=True), update={"thread_id": thread_id, "content": content}, from_attributes=True)
         session.add(db_message)

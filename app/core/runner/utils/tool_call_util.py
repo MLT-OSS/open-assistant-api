@@ -5,7 +5,7 @@ tool calls 常用转换方法
 {
     "id": "tool_call_0",
     "function": {
-        "name": "retrieval",
+        "name": "file_search",
         "arguments": "{\"file_keys\": [\"file_0\", \"file_1\"], \"query\": \"query\"}"
     }
 }

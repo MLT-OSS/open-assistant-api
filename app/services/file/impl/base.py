@@ -40,3 +40,8 @@ class BaseFileService(ABC):
     @abstractmethod
     async def delete_file(*, session: AsyncSession, file_id: str) -> DeleteResponse:
         pass
+
+    @staticmethod
+    @abstractmethod
+    def search_in_files(*, query: str, file_keys: List[str]) -> dict:
+        pass

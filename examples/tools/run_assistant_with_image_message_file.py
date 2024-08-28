@@ -8,23 +8,13 @@ from examples.prerun import client
 
 if __name__ == "__main__":
 
-    file_path = os.path.join(os.path.dirname(__file__) + "/../../README.md")
+    file_path = os.path.join(os.path.dirname(__file__) + "/../../docs/imgs/user.png")
     file = client.files.create(file=Path(file_path), purpose="assistants")
 
     assistant = client.beta.assistants.create(
         name="Assistant Demo",
         instructions="you are a personal assistant, file content could be retrieved to assist the conversation.",
         model="gpt-3.5-turbo-1106",
-        tools=[
-            {"type": "file_search"},
-        ],
-        tool_resources={
-            "file_search": {
-                "vector_stores": [{
-                    "file_ids": [file.id]
-                }]
-            }
-        }
     )
     logging.info("=====> : %s\n", assistant)
 
@@ -34,7 +24,8 @@ if __name__ == "__main__":
     message = client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content="what open assistant api is?",
+        content="please explain the content in the image file",
+        attachments=[{"file_id": file.id}]
     )
     logging.info("=====> : %s\n", message)
 

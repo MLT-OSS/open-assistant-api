@@ -3,26 +3,24 @@ from typing import Type, List
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.doc_loaders import doc_loader
 from app.core.tools.base_tool import BaseTool
 from app.models.run import Run
-from app.providers.storage import storage
 from app.services.file.file import FileService
 
 
-class RetrievalToolInput(BaseModel):
+class FileSearchToolInput(BaseModel):
     indexes: List[int] = Field(..., description="file index list to look up in retrieval")
     query: str = Field(..., description="query to look up in retrieval")
 
 
-class RetrievalTool(BaseTool):
-    name: str = "retrieval"
+class FileSearchTool(BaseTool):
+    name: str = "file_search"
     description: str = (
         "Can be used to look up information that was uploaded to this assistant."
         "If the user is referencing particular files, that is often a good hint that information may be here."
     )
 
-    args_schema: Type[BaseModel] = RetrievalToolInput
+    args_schema: Type[BaseModel] = FileSearchToolInput
 
     def __init__(self) -> None:
         super().__init__()
@@ -40,13 +38,12 @@ class RetrievalTool(BaseTool):
             self.__keys.append(file.key)
 
     def run(self, indexes: List[int], query: str) -> dict:
-        files = {}
+        file_keys = []
         for index in indexes:
             file_key = self.__keys[index]
-            file_data = storage.load(file_key)
-            # 截取前 5000 字符，防止超出 LLM 最大上下文限制
-            files[file_key] = doc_loader.load(file_data)[:5000]
+            file_keys.append(file_key)
 
+        files = FileService.search_in_files(query=query, file_keys=file_keys)
         return files
 
     def instruction_supplement(self) -> str:

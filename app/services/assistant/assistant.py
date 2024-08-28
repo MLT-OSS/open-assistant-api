@@ -6,11 +6,13 @@ from app.models.assistant import Assistant, AssistantUpdate, AssistantCreate
 from app.models.token_relation import RelationType
 from app.providers.auth_provider import auth_policy
 from app.schemas.common import DeleteResponse
+from app.utils import revise_tool_names
 
 
 class AssistantService:
     @staticmethod
     async def create_assistant(*, session: AsyncSession, body: AssistantCreate, token_id: str = None) -> Assistant:
+        revise_tool_names(body.tools)
         db_assistant = Assistant.model_validate(body.model_dump(by_alias=True))
         session.add(db_assistant)
         auth_policy.insert_token_rel(
@@ -22,6 +24,7 @@ class AssistantService:
 
     @staticmethod
     async def modify_assistant(*, session: AsyncSession, assistant_id: str, body: AssistantUpdate) -> Assistant:
+        revise_tool_names(body.tools)
         db_assistant = await AssistantService.get_assistant(session=session, assistant_id=assistant_id)
         update_data = body.dict(exclude_unset=True)
         for key, value in update_data.items():

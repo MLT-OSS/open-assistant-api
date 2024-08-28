@@ -10,6 +10,6 @@ class CreateThreadAndRun(BaseModel):
     thread: Optional[ThreadCreate] = None
     instructions: Optional[str] = None
     model: Optional[str] = None
-    metadata_: Optional[dict] = {}
+    metadata_: Optional[dict] = Field(default=None, schema_extra={"validation_alias": "metadata"})
     tools: Optional[list] = Field(default=[])
     stream: Optional[bool] = False

@@ -9,17 +9,17 @@ from app.models.action import Action
 from app.core.tools.base_tool import BaseTool
 from app.core.tools.external_function_tool import ExternalFunctionTool
 from app.core.tools.openapi_function_tool import OpenapiFunctionTool
-from app.core.tools.retrieval import RetrievalTool
+from app.core.tools.file_search_tool import FileSearchTool
 from app.core.tools.web_search import WebSearchTool
 
 
 class AvailableTools(str, Enum):
-    RETRIEVAL = "retrieval"
+    FILE_SEARCH = "file_search"
     WEB_SEARCH = "web_search"
 
 
 TOOLS = {
-    AvailableTools.RETRIEVAL: RetrievalTool,
+    AvailableTools.FILE_SEARCH: FileSearchTool,
     AvailableTools.WEB_SEARCH: WebSearchTool,
 }
 

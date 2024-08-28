@@ -44,15 +44,22 @@ services:
       REDIS_DB: 0
       REDIS_PASSWORD: 123456
 
-      # file service
-      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
-
       # s3 storage
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET_NAME: oas
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       S3_REGION: us-east-1
+
+      # file service
+      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
+      # FILE_SERVICE_MODULE: app.services.file.impl.r2r_file.R2RFileService
+
+      # file search tool
+      R2R_BASE_URL: http://r2r:8000
+      R2R_USERNAME: admin@example.com
+      R2R_PASSWORD: change_me_immediately
+      R2R_SEARCH_LIMIT: 10
 
       # secret
       APP_AES_ENCRYPTION_KEY: 7700b2f9c8dd982dfaddf8b47a92f1d900507ee8ac335f96a64e9ca0f018b195
@@ -98,9 +105,6 @@ services:
       REDIS_DB: 0
       REDIS_PASSWORD: 123456
 
-      # file service
-      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
-
       # s3 storage
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET_NAME: oas
@@ -122,7 +126,17 @@ services:
       BING_SUBSCRIPTION_KEY:
       WEB_SEARCH_NUM_RESULTS: 5
 
-      # secret
+      # file service
+      FILE_SERVICE_MODULE: app.services.file.impl.oss_file.OSSFileService
+      # FILE_SERVICE_MODULE: app.services.file.impl.r2r_file.R2RFileService
+
+      # file search tool
+      R2R_BASE_URL: http://r2r:8000
+      R2R_USERNAME: admin@example.com
+      R2R_PASSWORD: change_me_immediately
+      R2R_SEARCH_LIMIT: 10
+
+       # secret
       APP_AES_ENCRYPTION_KEY: 7700b2f9c8dd982dfaddf8b47a92f1d900507ee8ac335f96a64e9ca0f018b195
 
     depends_on:

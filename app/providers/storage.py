@@ -26,6 +26,9 @@ class Storage:
     def save(self, filename, data):
         self.client.put_object(Bucket=self.bucket_name, Key=filename, Body=data)
 
+    def save_from_path(self, filename, local_file_path):
+        self.client.upload_file(Filename=local_file_path, Bucket=self.bucket_name, Key=filename)
+
     def load(self, filename: str, stream: bool = False) -> Union[bytes, Generator]:
         if stream:
             return self.load_stream(filename)

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlmodel import select, col, desc
 
+from app.core.doc_loaders import doc_loader
 from app.exceptions.exception import ResourceNotFoundError
 from app.models import File
 from app.providers.storage import storage
@@ -35,23 +36,23 @@ class OSSFileService(BaseFileService):
     @staticmethod
     async def create_file(*, session: AsyncSession, purpose: str, file: UploadFile) -> File:
         # 文件是否存在
-        statement = (
-            select(File)
-            .where(File.purpose == purpose)
-            .where(File.filename == file.filename)
-            .where(File.bytes == file.size)
-        )
-        result = await session.execute(statement)
-        ext_file = result.scalars().first()
-        if ext_file is not None:
-            # TODO: 文件去重策略
-            return ext_file
+        # statement = (
+        #     select(File)
+        #     .where(File.purpose == purpose)
+        #     .where(File.filename == file.filename)
+        #     .where(File.bytes == file.size)
+        # )
+        # result = await session.execute(statement)
+        # ext_file = result.scalars().first()
+        # if ext_file is not None:
+        #     # TODO: 文件去重策略
+        #     return ext_file
 
-        key = f"{uuid.uuid4()}-{file.filename}"
-        storage.save(filename=key, data=file.file.read())
+        file_key = f"{uuid.uuid4()}-{file.filename}"
+        storage.save(filename=file_key, data=file.file.read())
 
         # 存储
-        db_file = File(purpose=purpose, filename=file.filename, bytes=file.size, key=key)
+        db_file = File(purpose=purpose, filename=file.filename, bytes=file.size, key=file_key)
         session.add(db_file)
         await session.commit()
         await session.refresh(db_file)
@@ -81,3 +82,13 @@ class OSSFileService(BaseFileService):
         await session.delete(ext_file)
         await session.commit()
         return DeleteResponse(id=file_id, deleted=True)
+
+    @staticmethod
+    def search_in_files(query: str, file_keys: List[str]) -> dict:
+        files = {}
+        for file_key in file_keys:
+            file_data = storage.load(file_key)
+            # 截取前 5000 字符，防止超出 LLM 最大上下文限制
+            files[file_key] = doc_loader.load(file_data)[:5000]
+
+        return files

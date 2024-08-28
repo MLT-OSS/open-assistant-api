@@ -18,7 +18,8 @@ router = APIRouter()
 # 限制文件大小
 max_size = 512 * 1024 * 1024
 # 支持的文件类型
-file_ext = [".txt", ".md", ".pdf", ".html"]
+file_ext = [".csv", ".docx", ".html", ".json", ".md", ".pdf", ".pptx", ".txt",
+            ".xlsx", ".gif", ".png", ".jpg", ".jpeg", ".svg", ".mp3", ".mp4"]
 
 
 @router.get("", response_model=ListFilesResponse)

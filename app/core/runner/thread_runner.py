@@ -10,7 +10,6 @@ from app.models.token_relation import RelationType
 from config.config import settings
 from config.llm import llm_settings, tool_settings
 
-from app.core.doc_loaders import doc_loader
 from app.core.runner.llm_backend import LLMBackend
 from app.core.runner.llm_callback_handler import LLMCallbackHandler
 from app.core.runner.memory import Memory, find_memory
@@ -28,8 +27,7 @@ from app.libs.thread_executor import get_executor_for_config, run_with_executor
 from app.models.message import Message, MessageUpdate
 from app.models.run import Run
 from app.models.run_step import RunStep
-from app.models.file import File
-from app.providers.storage import storage
+from app.models.token_relation import RelationType
 from app.services.assistant.assistant import AssistantService
 from app.services.file.file import FileService
 from app.services.message.message import MessageService
@@ -261,11 +259,6 @@ class ThreadRunner:
         根据历史信息生成 chat message
         """
 
-        def file_load(file: File):
-            file_data = storage.load(file.key)
-            content = doc_loader.load(file_data)
-            return f"For reference, here is is the content of file {file.filename}: '{content}'"
-
         chat_messages = []
         for message in messages:
             role = message.role
@@ -274,7 +267,7 @@ class ThreadRunner:
                 if message.file_ids:
                     files = FileService.get_file_list_by_ids(session=self.session, file_ids=message.file_ids)
                     for file in files:
-                        chat_messages.append(msg_util.new_message(role, file_load(file)))
+                        chat_messages.append(msg_util.new_message(role, f'The file "{file.filename}" can be used as a reference'))
                 else:
                     for content in message.content:
                         if content["type"] == "text":

@@ -13,6 +13,7 @@ from app.schemas.threads import CreateThreadAndRun
 from app.services.assistant.assistant import AssistantService
 from app.services.message.message import MessageService
 from app.services.thread.thread import ThreadService
+from app.utils import revise_tool_names
 
 
 class RunService:
@@ -23,8 +24,7 @@ class RunService:
         thread_id: str,
         body: RunCreate = ...,
     ) -> RunRead:
-        # get thread
-        await ThreadService.get_thread(session=session, thread_id=thread_id)
+        revise_tool_names(body.tools)
         # get assistant
         db_asst = await AssistantService.get_assistant(session=session, assistant_id=body.assistant_id)
         if not body.model and db_asst.model:
@@ -39,8 +39,27 @@ class RunService:
             body.temperature = db_asst.temperature
         if not body.top_p and db_asst.top_p:
             body.top_p = db_asst.top_p
+
+        file_ids = []
+        asst_file_ids = db_asst.file_ids
+        if db_asst.tool_resources and "file_search" in db_asst.tool_resources:
+            asst_file_ids = db_asst.tool_resources.get("file_search").get("vector_stores")[0].get("file_ids")
+        if asst_file_ids:
+            file_ids += asst_file_ids
+
+        # get thread
+        db_thread = await ThreadService.get_thread(session=session, thread_id=thread_id)
+        thread_file_ids = []
+        if db_thread.tool_resources and "file_search" in db_thread.tool_resources:
+            file_search_tool = {"type": "file_search"}
+            if file_search_tool not in body.tools:
+                body.tools.append(file_search_tool)
+            thread_file_ids = db_thread.tool_resources.get("file_search").get("vector_stores")[0].get("file_ids")
+        if thread_file_ids:
+            file_ids += thread_file_ids
+
         # create run
-        db_run = Run.model_validate(body.model_dump(by_alias=True), update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
+        db_run = Run.model_validate(body.model_dump(by_alias=True), update={"thread_id": thread_id, "file_ids": file_ids})
         session.add(db_run)
         session.refresh(db_run)
         run_id = db_run.id
@@ -65,6 +84,7 @@ class RunService:
         run_id: str,
         body: RunUpdate = ...,
     ) -> RunRead:
+        revise_tool_names(body.tools)
         await ThreadService.get_thread(session=session, thread_id=thread_id)
         old_run = await RunService.get_run(session=session, run_id=run_id)
         update_data = body.model_dump(exclude_unset=True)
@@ -81,21 +101,35 @@ class RunService:
         session: AsyncSession,
         body: CreateThreadAndRun = ...,
     ) -> RunRead:
+        revise_tool_names(body.tools)
         # get assistant
         db_asst = await AssistantService.get_assistant(session=session, assistant_id=body.assistant_id)
+        file_ids = []
+        asst_file_ids = db_asst.file_ids
+        if db_asst.tool_resources and "file_search" in db_asst.tool_resources:
+            asst_file_ids = db_asst.tool_resources.get("file_search").get("vector_stores")[0].get("file_ids")
+        if asst_file_ids:
+            file_ids += asst_file_ids
+
         # create thread
         thread_id = None
         if body.thread is not None:
             db_thread = await ThreadService.create_thread(session=session, body=body.thread)
             thread_id = db_thread.id
+            thread_file_ids = []
+            if db_thread.tool_resources and "file_search" in db_thread.tool_resources:
+                thread_file_ids = db_thread.tool_resources.get("file_search").get("vector_stores")[0].get("file_ids")
+            if thread_file_ids:
+                file_ids += thread_file_ids
         if body.model is None and db_asst.model is not None:
             body.model = db_asst.model
         if body.instructions is None and db_asst.instructions is not None:
             body.instructions = db_asst.instructions
         if body.tools is None and db_asst.tools is not None:
             body.tools = db_asst.tools
+
         # create run
-        db_run = Run.model_validate(body.model_dump(by_alias=True), update={"thread_id": thread_id, "file_ids": db_asst.file_ids})
+        db_run = Run.model_validate(body.model_dump(by_alias=True), update={"thread_id": thread_id, "file_ids": file_ids})
         session.add(db_run)
         await session.commit()
         await session.refresh(db_run)

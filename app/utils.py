@@ -23,3 +23,12 @@ def aes_decrypt(encrypted_text: str):
     cipher = AES.new(bytes.fromhex(app_settings.AES_ENCRYPTION_KEY), AES.MODE_CBC, iv)
     pt = unpad(cipher.decrypt(ct), AES.block_size)
     return pt.decode("utf-8")
+
+
+def revise_tool_names(tools: list):
+    if not tools:
+        return
+    for tool in tools:
+        if tool.get('type') != "retrieval":
+            continue
+        tool['type'] = 'file_search'

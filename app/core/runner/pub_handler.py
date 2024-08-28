@@ -51,7 +51,7 @@ def read_event(channel: str, x_index: str = None) -> Tuple[Optional[str], Option
 
 def _data_adjust_tools(tools: List[dict]) -> List[dict]:
     def _adjust_tool(tool: dict):
-        if tool["type"] not in {"code_interpreter", "retrieval", "function"}:
+        if tool["type"] not in {"code_interpreter", "file_search", "function"}:
             return {
                 "type": "function",
                 "function": {
