@@ -121,7 +121,6 @@ async def list_run_steps(
     return page.model_dump(by_alias=True)
 
 
-
 @router.get(
     "/{thread_id}/runs/{run_id}/steps/{step_id}",
     response_model=RunStepRead,
@@ -160,7 +159,7 @@ async def submit_tool_outputs_to_run(
     db_run = await RunService.submit_tool_outputs_to_run(session=session, thread_id=thread_id, run_id=run_id, body=body)
     # Resume async task
     if db_run.status == "queued":
-        run_task.apply_async(args=(db_run.id,))
+        run_task.apply_async(args=(db_run.id, body.stream))
 
     if body.stream:
         return pub_handler.sub_stream(db_run.id, request)

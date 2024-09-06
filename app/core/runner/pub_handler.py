@@ -49,6 +49,24 @@ def read_event(channel: str, x_index: str = None) -> Tuple[Optional[str], Option
     return stream_id, event
 
 
+def save_last_stream_id(run_id: str, stream_id: str):
+    """
+    保存当前 run_id 对应的最新 stream_id
+    :param run_id: 当前的运行 ID
+    :param stream_id: 最新的 stream_id
+    """
+    redis_client.set(f"run:{run_id}:last_stream_id", stream_id, 10 * 60)
+
+
+def get_last_stream_id(run_id: str) -> str:
+    """
+    获取上次保存的 stream_id
+    :param run_id: 当前的运行 ID
+    :return: 上次的 stream_id 或 None
+    """
+    return redis_client.get(f"run:{run_id}:last_stream_id")
+
+
 def _data_adjust_tools(tools: List[dict]) -> List[dict]:
     def _adjust_tool(tool: dict):
         if tool["type"] not in {"code_interpreter", "file_search", "function"}:
@@ -108,7 +126,8 @@ def sub_stream(run_id, request: Request, prefix_events: List[dict] = [], suffix_
         for event in prefix_events:
             yield event
 
-        x_index = None
+        last_index = get_last_stream_id(run_id)  # 获取上次的 stream_id
+        x_index = last_index or None
         while True:
             if await request.is_disconnected():
                 break
@@ -120,12 +139,15 @@ def sub_stream(run_id, request: Request, prefix_events: List[dict] = [], suffix_
                 break
 
             if data["event"] == "done":
+                save_last_stream_id(run_id, x_index)  # 记录最新的 stream_id
                 break
 
             if data["event"] == "error":
+                save_last_stream_id(run_id, x_index)  # 记录最新的 stream_id
                 raise InternalServerError(data["data"])
 
             yield data
+            save_last_stream_id(run_id, x_index)  # 记录最新的 stream_id
 
         for event in suffix_events:
             yield event
