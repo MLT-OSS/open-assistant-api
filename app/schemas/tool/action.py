@@ -88,7 +88,8 @@ class ActionBulkCreateRequest(BaseModel):
         openapi_schema = data.get("openapi_schema")
         validate_openapi_schema(openapi_schema)
         authentication = data.get("authentication")
-        Authentication.model_validate(authentication).encrypt()
+        if authentication:
+            Authentication.model_validate(authentication).encrypt()
         return data
 
 

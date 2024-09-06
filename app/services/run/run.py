@@ -61,7 +61,6 @@ class RunService:
         # create run
         db_run = Run.model_validate(body.model_dump(by_alias=True), update={"thread_id": thread_id, "file_ids": file_ids})
         session.add(db_run)
-        session.refresh(db_run)
         run_id = db_run.id
         if body.additional_messages:
             # create messages
