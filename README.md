@@ -8,7 +8,8 @@ _✨ An out-of-the-box AI intelligent assistant API ✨_
 
 <p align="center">
   <a href="./README.md">English</a> |
-  <a href="./README_CN.md">简体中文</a>
+  <a href="./README_CN.md">简体中文</a> |
+  <a href="./README_JP.md">日本語</a>
 </p>
 
 ## Introduction
