@@ -129,6 +129,7 @@ class ThreadRunner:
             tools=[tool.openai_function for tool in tools],
             tool_choice="auto" if len(run_steps) < self.max_step else "none",
             stream=True,
+            stream_options=run.stream_options,
             extra_body=run.extra_body,
             temperature=run.temperature,
             top_p=run.top_p,

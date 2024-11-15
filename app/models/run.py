@@ -49,6 +49,7 @@ class RunBase(BaseModel):
     failed_at: Optional[datetime] = Field(default=None)
     additional_instructions: Optional[str] = Field(default=None, max_length=32768, sa_column=Column(TEXT))
     extra_body: Optional[dict] = Field(default={}, sa_column=Column(JSON))
+    stream_options: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     incomplete_details: Optional[str] = Field(default=None)  # 未完成详情
     max_completion_tokens: Optional[int] = Field(default=None)  # 最大完成长度
     max_prompt_tokens: Optional[int] = Field(default=None)  # 最大提示长度
@@ -74,6 +75,7 @@ class RunCreate(BaseModel):
     tools: Optional[list] = []
     extra_body: Optional[dict[str, Union[dict[str, Union[Authentication, Any]], Any]]] = {}
     stream: Optional[bool] = False
+    stream_options: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     additional_messages: Optional[list[MessageCreate]] = Field(default=[], sa_column=Column(JSON))  # 消息列表
     max_completion_tokens: Optional[int] = None  # 最大完成长度
     max_prompt_tokens: Optional[int] = Field(default=None)  # 最大提示长度

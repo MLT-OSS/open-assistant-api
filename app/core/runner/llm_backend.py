@@ -22,6 +22,7 @@ class LLMBackend:
         tools: List = None,
         tool_choice="auto",
         stream=False,
+        stream_options=None,
         extra_body=None,
         temperature=None,
         top_p=None,
@@ -38,6 +39,10 @@ class LLMBackend:
                 if "n" in model_params:
                     raise ValueError("n is not allowed in model_params")
                 chat_params.update(model_params)
+        if stream_options:
+            if isinstance(stream_options, dict):
+                if "include_usage" in stream_options:
+                    chat_params["stream_options"] = {"include_usage": bool(stream_options["include_usage"])}
         if temperature:
             chat_params["temperature"] = temperature
         if top_p:
