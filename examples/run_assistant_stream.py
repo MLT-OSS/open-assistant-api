@@ -4,6 +4,8 @@ test for stream api
 import logging
 
 from openai import AssistantEventHandler
+from openai.types.beta import AssistantStreamEvent
+from openai.types.beta.assistant_stream_event import ThreadMessageInProgress
 from openai.types.beta.threads.message import Message
 from openai.types.beta.threads.runs import ToolCall, ToolCallDelta
 
@@ -47,6 +49,11 @@ class EventHandler(AssistantEventHandler):
     def on_text_done(self, text) -> None:
         logging.info("text done: %s\n", text)
 
+    def on_event(self, event: AssistantStreamEvent) -> None:
+        if isinstance(event, ThreadMessageInProgress):
+            logging.info("event: %s\n", event)
+
+
 if __name__ == "__main__":
     assistant = client.beta.assistants.create(
         name="Assistant Demo",
@@ -70,5 +77,8 @@ if __name__ == "__main__":
         thread_id=thread.id,
         assistant_id=assistant.id,
         event_handler=event_handler,
+        extra_body={
+            "stream_options": {"include_usage": True}
+        }
     ) as stream:
         stream.until_done()

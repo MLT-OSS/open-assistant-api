@@ -41,6 +41,10 @@ class LLMCallbackHandler:
             for chunk in response_stream:
                 logging.debug(chunk)
 
+                if chunk.usage:
+                    self.event_handler.pub_message_usage(chunk)
+                    continue
+
                 if not chunk.choices:
                     continue
 

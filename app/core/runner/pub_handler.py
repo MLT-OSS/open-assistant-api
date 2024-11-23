@@ -214,6 +214,24 @@ class StreamEventHandler:
             events.ThreadMessageInProgress(data=_data_adjust_message(message), event="thread.message.in_progress")
         )
 
+    def pub_message_usage(self, chunk):
+        """
+        目前 stream 未有 usage 相关 event，借用 thread.message.in_progress 进行传输，待官方更新
+        """
+        data = {
+            "id": chunk.id,
+            "content": [],
+            "created_at": 0,
+            "object": "thread.message",
+            "role": "assistant",
+            "status": "in_progress",
+            "thread_id": "",
+            "metadata": {"usage": chunk.usage.json()}
+        }
+        self.pub_event(
+            events.ThreadMessageInProgress(data=data, event="thread.message.in_progress")
+        )
+
     def pub_message_completed(self, message):
         self.pub_event(
             events.ThreadMessageCompleted(data=_data_adjust_message(message), event="thread.message.completed")
