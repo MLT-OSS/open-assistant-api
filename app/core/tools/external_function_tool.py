@@ -35,3 +35,24 @@ class ExternalFunctionTool(BaseTool):
         # 其它参数未使用到，暂时不做处理
         self.openai_function = definition
         self.name = definition["function"]["name"]
+
+
+def _validate_definition(self, definition: dict) -> bool:
+        """
+        Validate the structure of the function definition.
+        Returns True if valid, False otherwise.
+        """
+        if "type" not in definition or definition["type"] != "function":
+            return False
+        
+        if "function" not in definition:
+            return False
+        
+        if not isinstance(definition["function"], dict):
+            return False
+        
+        # Check if "name" exists
+        if "name" not in definition["function"]:
+            return False
+
+        return True
