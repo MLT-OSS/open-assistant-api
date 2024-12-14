@@ -14,13 +14,13 @@ _✨ An out-of-the-box AI intelligent assistant API ✨_
 
 ## Introduction
 
-Open Assistant API is an open-source, self-hosted AI intelligent assistant API, compatible with the official OpenAI
-interface. It can be used directly with the official OpenAI [Client](https://github.com/openai/openai-python) to build
+Open Assistant API is an open-source, self-hosted AI intelligent assistant API that’s compatible with the official OpenAI
+interface. It can be seamlessly used with the official OpenAI [Client](https://github.com/openai/openai-python) to create
 LLM applications.
 
-It supports [One API](https://github.com/songquanpeng/one-api) for integration with more commercial and private models.
+It also supports [One API](https://github.com/songquanpeng/one-api) for integration with a broader range of commercial and private models.
 
-It supports [R2R](https://github.com/SciPhi-AI/R2R) RAG engine。
+Additionally, it includes integration with the [R2R](https://github.com/SciPhi-AI/R2R) RAG engine.
 
 ## Usage
 
@@ -39,129 +39,105 @@ assistant = client.beta.assistants.create(
     instructions="You are a helpful assistant.",
     model="gpt-4-1106-preview"
 )
-```
 
-## Why Choose Open Assistant API
 
-| Feature                  | Open Assistant API | OpenAI Assistant API |
-|--------------------------|--------------------|----------------------|
-| Ecosystem Strategy       | Open Source        | Closed Source        |
-| RAG Engine               | Support R2R        | Supported            |
-| Internet Search          | Supported          | Not Supported        |
-| Custom Functions         | Supported          | Supported            |
-| Built-in Tool            | Extendable         | Not Extendable       |
-| Code Interpreter         | Under Development  | Supported            |
-| Multimodal               | Supported          | Supported            |
-| LLM Support              | Supports More LLMs | Only GPT             |
-| Message Streaming Output | Supports           | Supported            |
-| Local Deployment         | Supported          | Not Supported        |
 
-- **LLM Support**: Compared to the official OpenAI version, more models can be supported by integrating with One API.
-- **Tool**: Currently supports online search; can easily expand more tools.
-- **RAG Engine**: The currently supported file types are txt, html, markdown, pdf, docx, pptx, xlsx, png, mp3, mp4, etc. We provide a preliminary
-  implementation.
-- **Message Streaming Output**: Support message streaming output for a smoother user experience.
-- **Ecosystem Strategy**: Open source, you can deploy the service locally and expand the existing features.
+Why Choose Open Assistant API
+Feature	Open Assistant API	OpenAI Assistant API
+Ecosystem Strategy	Open Source	Closed Source
+RAG Engine	Supports R2R	Supported
+Internet Search	Supported	Not Supported
+Custom Functions	Supported	Supported
+Built-in Tools	Extendable	Not Extendable
+Code Interpreter	In Development	Supported
+Multimodal	Supported	Supported
+LLM Support	More LLMs	Only GPT
+Message Streaming Output	Supported	Supported
+Local Deployment	Supported	Not Supported
 
-## Quick Start
 
-The easiest way to start the Open Assistant API is to run the docker-compose.yml file. Make sure Docker and Docker
-Compose are installed on your machine before running.
+LLM Support: Compatible with a wider range of models via One API integration.
+Toolset: Currently supports online search and can be expanded with additional tools.
+RAG Engine: Supports file types like txt, html, markdown, pdf, docx, pptx, xlsx, png, mp3, mp4, and more.
+Message Streaming: Provides smoother message streaming for enhanced user interaction.
+Open Source: Completely open-source for local deployment and customization.
 
-### Configuration
 
-Go to the project root directory, open `docker-compose.yml`, fill in the openai api_key and bing search key (optional).
 
-```sh
+Quick Start
+The easiest way to launch the Open Assistant API is by using the Docker Compose file. Ensure Docker and Docker Compose are installed on your system.
+
+Configuration
+Navigate to the project root, open docker-compose.yml, and fill in your OpenAI API key and Bing search key (optional).
+
+sh
+Copy code
 # openai api_key (supports OneAPI api_key)
 OPENAI_API_KEY=<openai_api_key>
 
 # bing search key (optional)
 BING_SUBSCRIPTION_KEY=<bing_subscription_key>
-```
+Configuring the R2R RAG engine is recommended for a better RAG experience. You can set this up through the R2R repository.
 
-It is recommended to configure the R2R RAG engine to replace the default RAG implementation to provide better RAG capabilities.
-You can learn about and use R2R through the [R2R Github repository](https://github.com/SciPhi-AI/R2R).
-
-```sh
+sh
 # RAG config
 # FILE_SERVICE_MODULE=app.services.file.impl.oss_file.OSSFileService
 FILE_SERVICE_MODULE=app.services.file.impl.r2r_file.R2RFileService
 R2R_BASE_URL=http://<r2r_api_address>
 R2R_USERNAME=<r2r_username>
 R2R_PASSWORD=<r2r_password>
-```
 
-### Run
 
-#### Run with Docker Compose:
-
- ```sh
+Run
+Run with Docker Compose:
+sh
+Copy code
 docker compose up -d
- ```
+Access API
+API Base URL: http://127.0.0.1:8086/api/v1
+Documentation: http://127.0.0.1:8086/docs
+Complete Usage Example
+Below is a basic example to create and run an AI assistant using the OpenAI client. For other advanced features like streaming output, online tools, or custom functions, check the examples directory. Before starting, install the OpenAI Python library:
 
-### Access API
-
-Api Base URL: http://127.0.0.1:8086/api/v1
-
-Interface documentation address: http://127.0.0.1:8086/docs
-
-### Complete Usage Example
-
-In this example, an AI assistant is created and run using the official OpenAI client library. If you need to explore other usage methods,
-such as streaming output, tools (web_search, retrieval, function), etc., you can find the corresponding code under the examples directory.
-Before running, you need to run `pip install openai` to install the Python `openai` library.
-
-```sh
+sh
+Copy code
 # !pip install openai
 export PYTHONPATH=$(pwd)
 python examples/run_assistant.py
-```
+Permissions
+User isolation is implemented based on tokens for SaaS deployment support. To enable, configure APP_AUTH_ENABLE.
 
 
-### Permissions
-Simple user isolation is provided based on tokens to meet SaaS deployment requirements. It can be enabled by configuring `APP_AUTH_ENABLE`.
 
-![](docs/imgs/user.png)
+Use Bearer token for authentication. Include Authorization: Bearer *** in the header.
+Token management details can be found in the API documentation under the token section. Admin token, set as APP_AUTH_ADMIN_TOKEN, defaults to "admin".
+When creating a token, specify the base URL and API key. The assistant will use these settings to access the model.
+Tools
+Following OpenAPI/Swagger standards, the assistant can integrate various tools to enhance external connectivity.
 
-1. The authentication method is Bearer token. You can include `Authorization: Bearer ***` in the header for authentication.
-2. Token management is described in the token section of the API documentation. Relevant APIs need to be authenticated with an admin token, which is configured as `APP_AUTH_ADMIN_TOKEN` and defaults to "admin".
-3. When creating a token, you need to provide the base URL and API key of the large model. The created assistant will use the corresponding configuration to access the large model.
+Enables integration with other systems or services for tasks like code execution or data access.
+Tools need to be created before they can be used with the assistant. See test cases for more details: Assistant With Action.
+For tools requiring authentication, add auth details at runtime. Detailed parameter formats are in the API documentation. More details are in the test cases: Run With Auth Action.
+Community and Support
+Join our Slack channel for discussions, updates, and support.
 
-### Tools
-According to the OpenAPI/Swagger specification, it allows the integration of various tools into the assistant, empowering and enhancing its capability to connect with the external world.
+Connect with community members on Discord.
 
-1. Facilitates connecting your application with other systems or services, enabling interaction with the external environment, such as code execution or accessing proprietary information sources.
-2. During usage, you need to create tools first, and then you can integrate them with the assistant. Refer to the test cases for more details.[Assistant With Action](tests/tools/assistant_action_test.py)
-3. If you need to use tools with authentication information, simply add the authentication information at runtime. The specific parameter format can be found in the API documentation. Refer to the test cases for more details. [Run With Auth Action](tests/tools/run_with_auth_action_test.py)
+Join our WeChat group:
 
 
-## Community and Support
 
-- Join the [Slack](https://join.slack.com/t/openassistant-qbu7007/shared_invite/zt-29t8j9y12-9og5KZL6GagXTEvbEDf6UQ)
-  channel to see new releases, discuss issues, and participate in community interactions.
-- Join the [Discord](https://discord.gg/VfBruz4B) channel to interact with other community members.
-- Join the WeChat group:
+Special Thanks
+This project builds on the following incredible open-source projects:
 
-  ![](docs/imgs/wx.png)
+OpenOpenAI: Node-based Assistant API
+One API: Multi-model management
+R2R: RAG engine
+OpenAI-Python: OpenAI Python client
+OpenAI API: OpenAI API interface definition
+LangChain: LLM application development library
+OpenGPTs: LangChain GPTs
+TaskingAI: TaskingAI client SDK
+Contributing
+Please refer to our Contribution Guide to learn how to get involved and contribute.
 
-## Special Thanks
-
-We mainly referred to and relied on the following projects:
-
-- [OpenOpenAI](https://github.com/transitive-bullshit/OpenOpenAI): Assistant API implemented in Node
-- [One API](https://github.com/songquanpeng/one-api): Multi-model management tool
-- [R2R](https://github.com/SciPhi-AI/R2R): RAG engine
-- [OpenAI-Python](https://github.com/openai/openai-python): OpenAI Python Client
-- [OpenAI API](https://github.com/openai/openai-openapi): OpenAI interface definition
-- [LangChain](https://github.com/langchain-ai/langchain): LLM application development library
-- [OpenGPTs](https://github.com/langchain-ai/opengpts): LangChain GPTs
-- [TaskingAI](https://github.com/TaskingAI/TaskingAI): TaskingAI Client SDK
-
-## Contributing
-
-Please read our [contribution document](./docs/CONTRIBUTING.md) to learn how to contribute.
-
-## Open Source License
-
-This repository follows the MIT open source license. For more information, please see the [LICENSE](./LICENSE) file.
