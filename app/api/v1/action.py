@@ -1,32 +1,22 @@
-from typing import Dict, List
-
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
-from app.api.deps import get_async_session, get_token_id
-from app.libs.paginate import cursor_page, CommonPage
-from app.models.action import Action, ActionRead
-from app.models.token_relation import RelationType
-from app.providers.auth_provider import auth_policy
-from app.schemas.common import DeleteResponse, BaseSuccessDataResponse
-from app.schemas.tool.action import ActionBulkCreateRequest, ActionUpdateRequest, ActionRunRequest
-from app.services.tool.action import ActionService
-
-router = APIRouter()
-
+from fastapi import HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 
 @router.get("", response_model=CommonPage[ActionRead])
 async def list_actions(*, session: AsyncSession = Depends(get_async_session), token_id=Depends(get_token_id)):
     """
     Returns a list of Actions.
     """
-    statement = auth_policy.token_filter(
-        select(Action), field=Action.id, relation_type=RelationType.Action, token_id=token_id
-    )
-    page = await cursor_page(statement, session)
-    page.data = [ast.model_dump(by_alias=True) for ast in page.data]
-    return page.model_dump(by_alias=True)
+    try:
+        statement = auth_policy.token_filter(
+            select(Action), field=Action.id, relation_type=RelationType.Action, token_id=token_id
+        )
+        page = await cursor_page(statement, session)
+        page.data = [ast.model_dump(by_alias=True) for ast in page.data]
+        return page.model_dump(by_alias=True)
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("", response_model=List[ActionRead])
@@ -36,10 +26,14 @@ async def create_actions(
     """
     Create an action with openapi schema.
     """
-
-    actions = await ActionService.create_actions(session=session, body=body, token_id=token_id)
-    actions = [item.model_dump(by_alias=True) for item in actions]
-    return actions
+    try:
+        actions = await ActionService.create_actions(session=session, body=body, token_id=token_id)
+        actions = [item.model_dump(by_alias=True) for item in actions]
+        return actions
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/{action_id}", response_model=ActionRead)
@@ -47,8 +41,13 @@ async def get_action(*, session: AsyncSession = Depends(get_async_session), acti
     """
     Retrieves an action.
     """
-    action = await ActionService.get_action(session=session, action_id=action_id)
-    return action.model_dump(by_alias=True)
+    try:
+        action = await ActionService.get_action(session=session, action_id=action_id)
+        return action.model_dump(by_alias=True)
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{action_id}", response_model=ActionRead)
@@ -58,8 +57,13 @@ async def modify_action(
     """
     Modifies an action.
     """
-    action = await ActionService.modify_action(session=session, action_id=action_id, body=body)
-    return action.model_dump(by_alias=True)
+    try:
+        action = await ActionService.modify_action(session=session, action_id=action_id, body=body)
+        return action.model_dump(by_alias=True)
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete("/{action_id}", response_model=DeleteResponse)
@@ -67,7 +71,12 @@ async def delete_action(*, session: AsyncSession = Depends(get_async_session), a
     """
     Delete an action.
     """
-    return await ActionService.delete_action(session=session, action_id=action_id)
+    try:
+        return await ActionService.delete_action(session=session, action_id=action_id)
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post(
@@ -75,10 +84,15 @@ async def delete_action(*, session: AsyncSession = Depends(get_async_session), a
     response_model=BaseSuccessDataResponse,
 )
 async def api_run_action(*, session: AsyncSession = Depends(get_async_session), action_id: str, body: ActionRunRequest):
-    response: Dict = await ActionService.run_action(
-        session=session,
-        action_id=action_id,
-        parameters=body.parameters,
-        headers=body.headers,
-    )
-    return BaseSuccessDataResponse(data=response)
+    try:
+        response: Dict = await ActionService.run_action(
+            session=session,
+            action_id=action_id,
+            parameters=body.parameters,
+            headers=body.headers,
+        )
+        return BaseSuccessDataResponse(data=response)
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
