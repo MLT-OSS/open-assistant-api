@@ -7,6 +7,7 @@ import requests
 
 from app.schemas.tool.authentication import Authentication, AuthenticationType
 from app.schemas.tool.action import ActionMethod, ActionBodyType, ActionParam
+from app.services.tool.url_security import UnsafeActionURLError, validate_action_url
 
 
 # This function code from the Open Source Project TaskingAI.
@@ -139,18 +140,35 @@ def call_action_api(
 
         logging.info(f"call_action_api url={url} request kwargs: {request_kwargs}")
 
-        with requests.request(method.value, url, **request_kwargs) as response:
-            response_content_type = response.headers.get("Content-Type", "").lower()
-            if "application/json" in response_content_type:
-                data = response.json()
-            else:
-                data = response.text
-            if response.status_code == 500:
-                error_message = f"API call failed with status {response.status_code}"
-                if data:
-                    error_message += f": {data}"
-                return {"status": response.status_code, "error": error_message}
-            return {"status": response.status_code, "data": data}
+        timeout = float(os.environ.get("ACTION_HTTP_TIMEOUT", "10"))
+        request_kwargs["timeout"] = timeout
+        request_kwargs["allow_redirects"] = False
+
+        current_url = url
+        for _ in range(5):
+            validate_action_url(current_url)
+            with requests.request(method.value, current_url, **request_kwargs) as response:
+                if response.is_redirect:
+                    redirect_url = response.headers.get("Location")
+                    if not redirect_url:
+                        return {"status": response.status_code, "error": "Redirect response missing Location header"}
+                    current_url = urllib.parse.urljoin(current_url, redirect_url)
+                    continue
+
+                response_content_type = response.headers.get("Content-Type", "").lower()
+                if "application/json" in response_content_type:
+                    data = response.json()
+                else:
+                    data = response.text
+                if response.status_code == 500:
+                    error_message = f"API call failed with status {response.status_code}"
+                    if data:
+                        error_message += f": {data}"
+                    return {"status": response.status_code, "error": error_message}
+                return {"status": response.status_code, "data": data}
+        return {"status": 500, "error": "Too many redirects while making the API call"}
+    except UnsafeActionURLError as e:
+        return {"status": 400, "error": f"Blocked unsafe action URL: {e}"}
     except requests.exceptions.RequestException as e:
         return {"status": 500, "error": f"Failed to make the API call: {e}"}
     except Exception:

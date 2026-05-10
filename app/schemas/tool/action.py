@@ -8,6 +8,7 @@ import openapi_spec_validator
 
 from app.exceptions.exception import ValidateFailedError
 from app.schemas.tool.authentication import Authentication, AuthenticationType
+from app.services.tool.url_security import validate_openapi_server_url
 
 
 # This function code from the Open Source Project TaskingAI.
@@ -30,6 +31,11 @@ def validate_openapi_schema(schema: Dict):
 
     if len(schema["servers"]) != 1:
         raise ValidateFailedError("Exactly one server is allowed in action schema")
+
+    server_url = schema["servers"][0].get("url") if isinstance(schema["servers"][0], dict) else None
+    if not server_url or not isinstance(server_url, str):
+        raise ValidateFailedError("Action schema server URL is required")
+    validate_openapi_server_url(server_url)
 
     # check each path method has a valid description and operationId
     for path, methods in schema["paths"].items():
@@ -56,7 +62,7 @@ def validate_openapi_schema(schema: Dict):
 
             if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", details["operationId"]):
                 raise ValidateFailedError(
-                    f'Invalid operationId {details["operationId"]} in {method} {path} in action schema'
+                    f"Invalid operationId {details['operationId']} in {method} {path} in action schema"
                 )
 
     return schema
