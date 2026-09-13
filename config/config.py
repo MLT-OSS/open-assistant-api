@@ -15,6 +15,16 @@ class Settings(BaseSettings):
     SERVER_WORKERS: int = 8
     API_PREFIX: str = "/api"
 
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
+    TWILIO_WEBHOOK_BASE_URL: str = ""
+    GOOGLE_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+    DRAGON_GREETING_LANGUAGE: str = "de"
+    DRAGON_COMPANY_NAME: str = "Dragon & Partner"
+
     AUTH_ENABLE: bool = False
     AUTH_ADMIN_TOKEN: str = "admin"
     AES_ENCRYPTION_KEY: str = "xxx"
