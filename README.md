@@ -92,6 +92,26 @@ R2R_USERNAME=<r2r_username>
 R2R_PASSWORD=<r2r_password>
 ```
 
+### Dragon & Partner inbound call prototype
+
+This repository includes a first inbound-call prototype for Dragon & Partner. It uses Twilio
+webhooks and optionally Google Gemini Flash for short FAQ answers. Without a Gemini key it still
+handles the consent, FAQ fallback, contact collection, and appointment-request flow.
+
+1. Copy `.env.example` to `.env` and set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+   `TWILIO_PHONE_NUMBER`, and `TWILIO_WEBHOOK_BASE_URL`. Set either `GOOGLE_API_KEY` or
+   `GEMINI_API_KEY` to enable Gemini Flash.
+2. Set `DRAGON_GREETING_LANGUAGE=de` (default) or `en`.
+3. Start the API and configure the Twilio number's voice webhook to
+   `POST https://<host>/api/v1/dragon/calls/incoming`.
+
+The assistant asks for explicit recording consent before returning TwiML that starts recording.
+Calls are not recorded by default and are not recorded when consent is declined. The current
+calendar adapter is intentionally an in-memory placeholder; replace
+`PlaceholderCalendarAdapter.book` in `app/services/dragon_call.py` with the production calendar
+integration. Sessions are also in-memory and must move to durable storage for multi-worker or
+production deployments.
+
 ### Run
 
 #### Run with Docker Compose:
